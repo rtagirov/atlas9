@@ -1,0 +1,27 @@
+*....                           
+      common / opsblk / aal1, ac1, acool, afe1, amg1, ah2p, ahe1, ahe2, 
+     &                  ahemin, ahline, ahmin, ahot, ahyd, alines, 
+     &                  aluke, asi1, axcont, axline, 
+*
+     &                  sal1, sc1, sfe1, smg1, she1, she2, shline, 
+     &                  shmin, shyd, ssi1, sxcont, sxline, 
+*
+     &                  sigel, sigh, sigh2, sighe, siglin, sigx, sigxl
+      double precision  aal1(maxd), ac1(maxd), acool(maxd), afe1(maxd), 
+     &                  amg1(maxd), ah2p(maxd), ahe1(maxd), ahe2(maxd), 
+     &                  ahemin(maxd), ahline(maxd), ahmin(maxd), 
+     &                  ahot(maxd), ahyd(maxd), alines(maxd), 
+     &                  aluke(maxd), asi1(maxd), axcont(maxd), 
+     &                  axline(maxd), 
+*
+     &                  sal1(maxd), sc1(maxd), sfe1(maxd), smg1(maxd), 
+     &                  she1(maxd), she2(maxd), shline(maxd), 
+     &                  shmin(maxd), shyd(maxd), ssi1(maxd), 
+     &                  sxcont(maxd), sxline(maxd), 
+*
+     &                  sigel(maxd), sigh(maxd), sigh2(maxd), 
+     &                  sighe(maxd), siglin(maxd), sigx(maxd),  
+     &                  sigxl(maxd)
+*
+***************** E N D  O F   C O M M O N   O P S B L K *****************
+*

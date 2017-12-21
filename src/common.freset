@@ -1,0 +1,7 @@
+*.... 
+      common /freset/  freset, rcoset, nulo, nuhi, numnu
+      integer          nulo, nuhi, numnu
+      double precision freset(maxnu), rcoset(maxnu)
+*
+***************** E N D  O F   C O M M O N   F R E S E T *****************
+*

@@ -1,0 +1,7 @@
+*.... 
+      common /pzerob/  knu, pcon, pradk, pradk0, pturb0, pzero, raden
+      double precision knu(maxd), pcon, pradk(maxd), pradk0, pturb0, 
+     &                 pzero, raden(maxd)
+*
+***************** E N D  O F   C O M M O N   P Z E R O B *****************
+*

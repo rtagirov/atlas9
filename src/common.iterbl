@@ -1,0 +1,6 @@
+*.... 
+      common /iterbl/ iter, ifprnt, ifpnch, numits 
+      integer         iter, ifprnt, ifpnch, numits 
+*
+***************** E N D  O F   C O M M O N   I T E R B L *****************
+*

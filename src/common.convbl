@@ -1,0 +1,12 @@
+*.... 
+      common /convbl/  dlrdlt, dltdlp, flxcnv, flxcnv0, flxcnv1, grdadb, 
+     &                 heatcp, hscale, mixlth, overwt, vconv, velsnd, 
+     &                 ifconv
+      double precision dlrdlt(maxd), dltdlp(maxd), flxcnv(maxd), 
+     &                 flxcnv0(maxd), flxcnv1(maxd), grdadb(maxd), 
+     &                 heatcp(maxd), hscale(maxd), mixlth, overwt, 
+     &                 vconv(maxd), velsnd(maxd)
+      logical          ifconv
+*
+***************** E N D  O F   C O M M O N   C O N V B L *****************
+*

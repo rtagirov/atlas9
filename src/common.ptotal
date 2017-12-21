@@ -1,0 +1,6 @@
+*.... 
+      common /ptotal/  ptotal
+      double precision ptotal(maxd)
+*
+***************** E N D  O F   C O M M O N   P T O T A L *****************
+*

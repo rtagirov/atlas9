@@ -1,0 +1,7 @@
+*.... 
+      common /ifopbl/ ifop, lodf
+      character       lodf*8
+      logical         ifop(20)
+*
+***************** E N D  O F   C O M M O N   I F O P B L *****************
+*

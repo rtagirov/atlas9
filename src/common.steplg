@@ -1,0 +1,7 @@
+*.... 
+      common / steplg / steplg, tau1lg, krhox
+      double precision  steplg, tau1lg
+      integer           krhox
+*
+***************** E N D  O F   C O M M O N   S T E P L G *****************
+*

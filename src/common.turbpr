@@ -1,0 +1,9 @@
+*.... 
+      common /turbpr/  pturb, trbcon, trbfdg, trbpow, trbsnd, vturb,
+     &                 ifturb
+      logical          ifturb
+      double precision pturb(maxd), trbcon, trbfdg, trbpow, trbsnd, 
+     &                 vturb(maxd)
+*
+***************** E N D  O F   C O M M O N   T U R B P R *****************
+*

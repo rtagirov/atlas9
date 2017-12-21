@@ -1,0 +1,6 @@
+*.... 
+      common /radblk/  accrad, prad
+      double precision accrad(maxd), prad(maxd)
+*
+***************** E N D  O F   C O M M O N   R A D B L K *****************
+*

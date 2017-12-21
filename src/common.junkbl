@@ -1,0 +1,8 @@
+*....
+      common /junkbl/  title, freqid, xscale, wlte 
+      character	       title*74
+      character        freqid*6
+      character        wlte*4
+      double precision xscale
+*
+***************** E N D  O F   C O M M O N   J U N K B L *****************

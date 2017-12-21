@@ -1,0 +1,30 @@
+FC = ifort
+OBJ = CreateNetCDF.o OpenNetCDF.o ReadNetCDF.o CloseNetCDF.o \
+	  WriteNetCDF.o handle_error.o
+
+all: libnet.a
+
+libnet.a: $(OBJ)
+	ar crv libnet.a $(OBJ)
+	mv *.o libnet.a -t ../../obj/
+
+CreateNetCDF.o: CreateNetCDF.F90
+	$(FC) $(FFLAGS) $(FPPFLAGS) CreateNetCDF.F90 $(NETCDFLIB_INC_PATH2) $(STATIC)
+
+OpenNetCDF.o: OpenNetCDF.F90
+	$(FC) $(FFLAGS) $(FPPFLAGS) OpenNetCDF.F90 $(NETCDFLIB_INC_PATH2) $(STATIC)
+
+ReadNetCDF.o: ReadNetCDF.F90
+	$(FC) $(FFLAGS) $(FPPFLAGS) ReadNetCDF.F90 $(NETCDFLIB_INC_PATH2) $(STATIC)
+
+CloseNetCDF.o: CloseNetCDF.F90
+	$(FC) $(FFLAGS) $(FPPFLAGS) CloseNetCDF.F90 $(NETCDFLIB_INC_PATH2) $(STATIC)
+
+WriteNetCDF.o: WriteNetCDF.F90
+	$(FC) $(FFLAGS) $(FPPFLAGS) WriteNetCDF.F90 $(NETCDFLIB_INC_PATH2) $(STATIC)
+
+handle_error.o: handle_error.F90
+	$(FC) $(FFLAGS) $(FPPFLAGS) handle_error.F90 $(NETCDFLIB_INC_PATH2) $(STATIC)
+
+clean:
+	rm -vf ../../obj/*.o ../../obj/libnet.a
