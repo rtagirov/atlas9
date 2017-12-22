@@ -1,0 +1,7 @@
+rm -vf atlas9.print
+rm -vf atlas9.punch
+rm -vf atlas9.wave
+rm -vf atlas9.jnu
+rm -vf out
+rm -vf xnfpdf*
+rm -vf debug.dat
