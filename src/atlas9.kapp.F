@@ -163,6 +163,15 @@
          end do
 *
       end if
+
+      do j = 1, nrhox
+
+         print*, bolt(j, 1), bhyd(j, 1)
+
+      enddo
+
+      stop
+
 *
       do n = 1, 8
          cont(n) = xkarsas (1.0d0, n, n)
