@@ -166,7 +166,7 @@
 
       do j = 1, nrhox
 
-         print*, bolt(j, 1), bhyd(j, 1)
+         print*, j, bhyd(j, 1), bhyd(j, 2)
 
       enddo
 

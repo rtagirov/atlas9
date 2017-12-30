@@ -1,5 +1,9 @@
       program atlas9
+
+      use strings
+
       implicit none
+ 
 *
 *.... 1994 JAN - MOVED FUNDAMENTAL CONSTANTS INTO COMMON.CONSTB
 *.... 1995 JUL - CHANGED freqlg TO freqln = log(freq), IE., A NATURAL LOG
@@ -104,7 +108,9 @@
      &                  rcowt, stepwt, sumwt, wave, x, rosstab, asixth
 *     double precision exp10
       integer  i, j, mm,  mode1, n, nsteps, nu, nmod, imod
-      logical  finish, more, readi0, stopfl
+      logical  finish, more, readi0, stopfl, nltepop
+
+      real*8, dimension(:), allocatable :: dep
 *
 *-------------------------------  EXTERNALS ----------------------------
 *
@@ -188,7 +194,7 @@ c     exp10(x) = exp(x * 2.30258509299405d0)
       double precision freeff
       parameter (max1=maxmol+1)
       
-      logical nosaha, checkinf, isinf, damien 
+      logical checkinf, isinf, damien 
 
       double precision xnfh2(maxd), xnfph2(maxd), xnfpco(maxd)
       real*8 XNFP(maxd,10,99),XNFPEL(6,99),DOPPLE(6,99)
@@ -339,8 +345,6 @@ c     exp10(x) = exp(x * 2.30258509299405d0)
      &      status = 'old', access = 'sequential') 
 
       more = .true.
-      nosaha = .false.
-
 !
       maxpow = 99
       last=80
@@ -552,45 +556,31 @@ c     exp10(x) = exp(x * 2.30258509299405d0)
        write(11)numnu,(freqset(nu),nu=1,numnu)
  
 
-       itemp = itemp +1 
-
-
-        if (nosaha) then 
-!      FOR RENAT: here does readin routines for populations 
-
-
-        !        else
-  
+       itemp = itemp + 1
+ 
 ! --- Calculate Saha for certain elements ----!
 ! carefull xnfh was a xnfh(nrohx) array but in the
-! new atlas it is xnfh(nrhox,2) --> what is the 2nd index --> it is the first and second 
+! new atlas it is xnfh(nrhox,2) --> what is the 2nd index --> it is the first and second
 ! and nth ion!!!
 
-       else 
- 
-         call pops(1.00d0, 12, xnfh)
-         call pops(2.01d0, 12, xnfhe)
+        call pops(1.00d0, 12, xnfh)
+        call pops(2.01d0, 12, xnfhe)
 
-         call pops( 1.01d0, 11, xnfph)
-         call pops( 2.02d0, 11, xnfphe)
-         call pops( 5.00d0, 11, xnfpb) 
-         call pops( 6.01d0, 11, xnfpc)
-         call pops( 8.00d0, 11, xnfpo)
-         call pops(11.00d0, 11, xnfpna)
-         call pops(12.01d0, 11, xnfpmg)
-         call pops(13.01d0, 11, xnfpal)
-         call pops(14.01d0, 11, xnfpsi)
-         call pops(19.00d0, 11, xnfpk) 
-         call pops(20.01d0, 11, xnfpca)
-         call pops(26.00d0, 11, xnfpfe)
+        call pops( 1.01d0, 11, xnfph)
+        call pops( 2.02d0, 11, xnfphe)
+        call pops( 5.00d0, 11, xnfpb)
+        call pops( 6.01d0, 11, xnfpc)
+        call pops( 8.00d0, 11, xnfpo)
+        call pops(11.00d0, 11, xnfpna)
+        call pops(12.01d0, 11, xnfpmg)
+        call pops(13.01d0, 11, xnfpal)
+        call pops(14.01d0, 11, xnfpsi)
+        call pops(19.00d0, 11, xnfpk)
+        call pops(20.01d0, 11, xnfpca)
+        call pops(26.00d0, 11, xnfpfe)
 
-
-
-        IF(IFMOL.EQ.1)CALL POPS(106.00D0,11,XNFPCH)
-        IF(IFMOL.EQ.1)CALL POPS(108.00D0,11,XNFPOH)
- 
-
-        end if  
+        IF (IFMOL .EQ. 1) CALL POPS(106.00D0, 11, XNFPCH)
+        IF (IFMOL .EQ. 1) CALL POPS(108.00D0, 11, XNFPOH)
 
         do j = 1, nrhox
 
@@ -1108,11 +1098,28 @@ c	       print *, ' *** Model ', imod
 
                   call pops(0.0d0, 1, xne)
                end if
+ 
+!              nltepop = .false.
+               nltepop = .true.
 
+               if (nltepop) then
+
+                  allocate(dep(nrhox))
+
+                  do n = 1, 8
+
+                    print*, 'lalal ', int_to_char(n)
+
+                    call read_nlte_lev(nrhox, 'HI'//int_to_char(n), dep)
+
+                    bhyd(1 : nrhox, n) = dep(1 : nrhox)
+
+                  enddo
+
+               endif
 
                call pops(0.0d0, 1, xne)
 
-*
                call pops( 1.01d0, 11, xnfph)
                call pops( 2.02d0, 11, xnfphe)
                call pops( 6.03d0, 11, xnfpc)
@@ -3521,16 +3528,61 @@ c416         format (i5, f10.2, 1pe15.6, / (1p8e10.3))
 *
 *********** E N D   O F   S U B R O U T I N E   T U R B ****************
 *
+      subroutine read_nlte_lev(nrhox, levname, dep)
+
+      implicit none
+
+      integer, intent(in) :: nrhox
+
+      character (len = *), intent(in) :: levname
+
+      real*8, dimension(nrhox), intent(out) :: dep
+
+      character (len = 10000) :: s
+
+      integer :: un, w1, j
+
+      real*8 :: w2, dz
+
+      dep(1 : nrhox) = 0.0d0
+
+      un = 1845
+
+      print*, 'here'
+
+      open(unit = un, file = 'nltepop/'//levname, status = 'old')
+
+      read(un, *) s
+!      read(un, *) s
+
+      do j = 1, nrhox
+
+         read(un, *) w1, w1, w2, w2, dz; dep(j) = dz
+
+         print*, j, dz
+
+!         print*, dz
+
+      enddo
+
+      close(un)
+
+      end
+
       logical function isinf(a)
-       implicit none 
-       double precision  a
+
+      implicit none 
+
+      double precision  a
 
       if ((a*0.d0).ne.0) then
        isinf = .true.
       else
       isinf = .false.
       end if
+
       return
+
       end
 
 *********************************************************************** 

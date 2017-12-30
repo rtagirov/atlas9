@@ -208,7 +208,7 @@ c     implicit undefined (a-z)
                   flxerr(j) = 0.0d0
                   flxdrv(j) = 0.0d0
                end do
-	print *, ' corrections off lalala'
+	print *, ' corrections off '
 *
             else
                write (16, 9001) '  in correction i cannot read ', card
