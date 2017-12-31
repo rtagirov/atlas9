@@ -1108,7 +1108,7 @@ c	       print *, ' *** Model ', imod
 
                   do n = 1, 8
 
-                    print*, 'lalal ', int_to_char(n)
+!                    print*, 'lalal ', int_to_char(n)
 
                     call read_nlte_lev(nrhox, 'HI'//int_to_char(n), dep)
 
@@ -3548,7 +3548,7 @@ c416         format (i5, f10.2, 1pe15.6, / (1p8e10.3))
 
       un = 1845
 
-      print*, 'here'
+!      print*, 'here'
 
       open(unit = un, file = 'nltepop/'//levname, status = 'old')
 
@@ -3559,7 +3559,7 @@ c416         format (i5, f10.2, 1pe15.6, / (1p8e10.3))
 
          read(un, *) w1, w1, w2, w2, dz; dep(j) = dz
 
-         print*, j, dz
+!         print*, j, dz
 
 !         print*, dz
 
