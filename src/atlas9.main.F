@@ -1,6 +1,7 @@
       program atlas9
 
       use strings
+      use nlte
 
       implicit none
  
@@ -108,9 +109,9 @@
      &                  rcowt, stepwt, sumwt, wave, x, rosstab, asixth
 *     double precision exp10
       integer  i, j, mm,  mode1, n, nsteps, nu, nmod, imod
-      logical  finish, more, readi0, stopfl, nltepop
+      logical  finish, more, readi0, stopfl
 
-      real*8, dimension(:), allocatable :: dep
+      real*8, dimension(:), allocatable :: val
 *
 *-------------------------------  EXTERNALS ----------------------------
 *
@@ -1098,27 +1099,34 @@ c	       print *, ' *** Model ', imod
 
                   call pops(0.0d0, 1, xne)
                end if
- 
-!              nltepop = .false.
-               nltepop = .true.
+
+               if (.not. nltepop) call pops(0.0d0, 1, xne)
 
                if (nltepop) then
 
-                  allocate(dep(nrhox))
+!                  allocate(bhii(nrhox))
+                  allocate(val(nrhox))
+
+                  call read_nlte_lev(nrhox, 'ELECTR', 'pop', val)
+
+                  xne(1 : nrhox) = xnatom(1 : nrhox) * val(1 : nrhox)
+
+                  call read_nlte_lev(nrhox, 'HMINUS', 'dep', bmin)
 
                   do n = 1, 8
 
-!                    print*, 'lalal ', int_to_char(n)
+                    call read_nlte_lev(nrhox, 'HI'//int_to_char(n), 
+     $                                 'dep', val)
 
-                    call read_nlte_lev(nrhox, 'HI'//int_to_char(n), dep)
-
-                    bhyd(1 : nrhox, n) = dep(1 : nrhox)
+                    bhyd(1 : nrhox, n) = val(1 : nrhox)
 
                   enddo
 
-               endif
+!                  call read_nlte_lev(nrhox, 'HII', 'dep', bhii)
 
-               call pops(0.0d0, 1, xne)
+                  deallocate(val)
+
+               endif
 
                call pops( 1.01d0, 11, xnfph)
                call pops( 2.02d0, 11, xnfphe)
@@ -3527,47 +3535,6 @@ c416         format (i5, f10.2, 1pe15.6, / (1p8e10.3))
       end
 *
 *********** E N D   O F   S U B R O U T I N E   T U R B ****************
-*
-      subroutine read_nlte_lev(nrhox, levname, dep)
-
-      implicit none
-
-      integer, intent(in) :: nrhox
-
-      character (len = *), intent(in) :: levname
-
-      real*8, dimension(nrhox), intent(out) :: dep
-
-      character (len = 10000) :: s
-
-      integer :: un, w1, j
-
-      real*8 :: w2, dz
-
-      dep(1 : nrhox) = 0.0d0
-
-      un = 1845
-
-!      print*, 'here'
-
-      open(unit = un, file = 'nltepop/'//levname, status = 'old')
-
-      read(un, *) s
-!      read(un, *) s
-
-      do j = 1, nrhox
-
-         read(un, *) w1, w1, w2, w2, dz; dep(j) = dz
-
-!         print*, j, dz
-
-!         print*, dz
-
-      enddo
-
-      close(un)
-
-      end
 
       logical function isinf(a)
 

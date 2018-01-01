@@ -4,7 +4,7 @@
 
       contains
 
-      FUNCTION INT_TO_CHAR(IntNum) RESULT(CharNum)
+      function int_to_char(IntNum) RESULT(CharNum)
 
       INTEGER, INTENT(IN) :: IntNum
 
@@ -36,9 +36,9 @@
 
       CharNum = TRIM(ADJUSTL(CharNum))
 
-      RETURN
+      return
 
-      END FUNCTION INT_TO_CHAR
+      end function int_to_char
 
 
       FUNCTION RM_CHAR(in_str, target_char) RESULT(out_str)
@@ -69,4 +69,4 @@
 
       END FUNCTION RM_CHAR
 
-      END MODULE
+      end module

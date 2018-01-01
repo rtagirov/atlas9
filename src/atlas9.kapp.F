@@ -103,6 +103,9 @@
 *********** E N D   O F   S U B R O U T I N E   K A P P ****************
 *
       subroutine hop
+
+!      use nlte
+
       implicit none
 *
 *.... REQUIRES COULFF AND XKARSAS
@@ -156,13 +159,23 @@
 *.... TAKE 1.0D10 OUT OF FREET AND PUT IT WITH CFREE
             freet(j) = 1.0d-10 * xne(j) * xnfh(j,2) /
      &                 (rho(j) * sqrt(t(j)))
+
             xr = xnfph(j, 1) * (2.0d0 / 2.0d0 / hydip) * tkev(j) / 
      &           rho(j)
+
             boltex(j) = exp(-13.427d0 / tkev(j) ) * xr
             exlim(j) = exp( -hydip / tkev(j) ) * xr
+
          end do
 *
       end if
+
+!      if (nltepop) then
+
+!          boltex(1 : nrhox) = boltex(1 : nrhox) * bhii(1 : nrhox)
+!          exlim(1 : nrhox) =  exlim(1 : nrhox)  * bhii(1 : nrhox)
+
+!      endif
 
 !      do j = 1, nrhox
 
@@ -399,6 +412,7 @@
 *********** E N D   O F   S U B R O U T I N E   H 2 P L O P ************
 *
       subroutine hminop
+
       implicit none
 *
 *-------------------------------- COMMONS -----------------------------
