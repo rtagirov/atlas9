@@ -164,13 +164,13 @@
 *
       end if
 
-      do j = 1, nrhox
+!      do j = 1, nrhox
 
-         print*, j, bhyd(j, 1), bhyd(j, 2)
+!         print*, j, bhyd(j, 7), bhyd(j, 8)
 
-      enddo
+!      enddo
 
-      stop
+!      stop
 
 *
       do n = 1, 8
