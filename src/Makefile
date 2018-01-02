@@ -1,27 +1,37 @@
-SRC = atlas9.main.F\
-      atlas9.read.F\
-      atlas9.kapp.F\
-      atlas9.pops.F\
-      atlas9.josh.F\
-      atlas9.conv.F
+src=atlas9.main.F\
+    atlas9.read.F\
+    atlas9.kapp.F\
+    atlas9.pops.F\
+    atlas9.josh.F\
+    atlas9.conv.F
 
-OBJDIR=../obj/
+objdir=../obj/
 
-OBJ = $(addprefix ${OBJDIR},$(SRC:.F=.o))
+obj=$(addprefix ${objdir},${src:.F=.o})
 
-EXE = $(OBJDIR)atlas9.exe
+exe=${objdir}atlas9.exe
 
-#ifort preprocessor flags
-FPPFLAGS = "-DODF"
+#fortran compiler
+comp=ifort
+
+#netcdf library
+inc=-I ../lib/netcdf-3.6.1/include
+lib=-L ${objdir} -lnet -L ../lib/netcdf-3.6.1/lib -lnetcdf
+
+#regular flags
+rf=-module ${objdir}
+
+#preprocessor flags
+ppf=#-DODF
 
 #target definition
 all: exe
 
-exe: $(OBJ)
-	$(FC) $(FPPFLAGS) -o $(EXE) $(OBJ) $(NETCDFLIB_INC_PATH1) $(NETCDFLIB)
+exe: ${obj}
+	${comp} ${rf} ${ppf} -o ${exe} ${obj} ${inc} ${lib}
 
-${OBJDIR}%.o: %.F
-	$(FC) -c $(FPPFLAGS) $< -o $@
+${objdir}%.o: %.F
+	${comp} -c ${ppf} $< ${rf} -o $@
 
 clean:
-	rm -vf $(OBJ) $(EXE)
+	rm -vf ${obj} ${objdir}*.mod ${exe}
