@@ -1,29 +1,29 @@
-SRC=CreateNetCDF.F90\
+src=CreateNetCDF.F90\
     OpenNetCDF.F90\
     ReadNetCDF.F90\
     CloseNetCDF.F90\
 	WriteNetCDF.F90\
     handle_error.F90
 
-OBJDIR=../../obj/
+objdir=../../obj/
 
-OBJ=$(addprefix ${OBJDIR},${SRC:.F90=.o})
+obj=$(addprefix ${objdir},${src:.F90=.o})
 
-LIB=${OBJDIR}libnet.a
+lib=${objdir}libnet.a
 
 #fortran compiler
-FC=ifort
+comp=ifort
 
 #netcdf library
-NETCDFLIB_INC_PATH=-I ../../lib/netcdf-3.6.1/include
+netcdflib_inc_path=-I ../../lib/netcdf-3.6.1/include
 
 all: lib
 
-lib: ${OBJ}
-	ar crv ${LIB} ${OBJ}
+lib: ${obj}
+	ar crv ${lib} ${obj}
 
-${OBJDIR}%.o: %.F90
-	${FC} -c $< ${NETCDFLIB_INC_PATH} ${STATIC} -o $@
+${objdir}%.o: %.F90
+	${comp} -c $< ${netcdflib_inc_path} ${static} -o $@
 
 clean:
-	rm -vf ${OBJ} ${LIB}
+	rm -vf ${obj} ${lib}
