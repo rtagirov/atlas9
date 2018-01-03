@@ -21,15 +21,21 @@
 
       real*8, dimension(nrhox), intent(out) :: val
 
-      real*8, dimension(nrhox) :: val1, val2, val3, val4, val5
+      real*8, allocatable, dimension(:) :: val1, val2, val3, val4, val5
 
       character (len = 10000) :: s
 
       integer :: un, j
 
+      allocate(val1(nrhox))
+      allocate(val2(nrhox))
+      allocate(val3(nrhox))
+      allocate(val4(nrhox))
+      allocate(val5(nrhox))
+
       un = 1845
 
-      open(unit = un, file = 'nltepop/'//levname, status = 'old')
+      open(unit = un, file = 'nltepop/'//levname, action = 'read')
 
       read(un, *) s
 
@@ -44,6 +50,12 @@
 
       if (mode /= 'pop' .and. mode /= 'dep')
      $   stop 'subroutine read_nlte_lev: mode is not recognized'
+
+      deallocate(val1)
+      deallocate(val2)
+      deallocate(val3)
+      deallocate(val4)
+      deallocate(val5)
 
       return
 

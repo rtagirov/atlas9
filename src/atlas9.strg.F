@@ -1,4 +1,4 @@
-      module strings
+      module string_operations
 
       implicit none
 
@@ -28,7 +28,7 @@
 
 !      else
 
-!         stop, 'module strings, function int_to_char: integer too large. abort'
+!         stop, 'module string_operations, function int_to_char: integer too large. abort'
 
 !      ENDIF
 
