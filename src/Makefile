@@ -1,4 +1,5 @@
-src=atlas9.main.F\
+src=atlas9.file.F\
+    atlas9.main.F\
     atlas9.read.F\
     atlas9.kapp.F\
     atlas9.pops.F\

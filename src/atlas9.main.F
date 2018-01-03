@@ -1,4 +1,7 @@
       program atlas9
+
+      use file_operations
+
       implicit none
 *
 *.... 1994 JAN - MOVED FUNDAMENTAL CONSTANTS INTO COMMON.CONSTB
@@ -45,16 +48,11 @@
 *----------------------------- COMMONS ---------------------------------
 *
 
-
       include 'common.odfnlte'
-
-     
-
-
 
       include 'common.sizebl'
       include 'common.constb'
-*
+
       include 'common.abross'
       include 'common.abtotb'
       include 'common.contbl'
@@ -952,14 +950,28 @@ c     exp10(x) = exp(x * 2.30258509299405d0)
 *
       open (unit = 15, file = 'atlas9.input', form = 'formatted',
      &      status = 'old', access = 'sequential')
-      open (unit = 16, file = 'atlas9.print', form = 'formatted',
-     &      status = 'new', access = 'sequential')
-      open (unit = 17, file = 'atlas9.punch', form = 'formatted',
-     &      status = 'new', access = 'sequential')
-      open (unit = 18, file = 'atlas9.jnu', form = 'formatted',
-     &      status = 'new', access = 'sequential')
-      open (unit = 33, file = 'atlas9.modinp', form = 'formatted',
+
+      open (unit = 33, file = atm_mod_file, form = 'formatted',
      &      status = 'old', access = 'sequential')
+
+!      open (unit = 16, file = 'atlas9.print', form = 'formatted',
+!     &      status = 'new', access = 'sequential')
+      open (unit = 16, file = print_file,
+     &      status = 'replace', access = 'stream',
+     $      form = 'formatted')
+
+!      open (unit = 17, file = 'atlas9.punch', form = 'formatted',
+!     &      status = 'new', access = 'sequential')
+      open (unit = 17, file = spec_file,
+     &      status = 'replace', access = 'stream',
+     $      form = 'formatted')
+
+!      open (unit = 18, file = 'atlas9.jnu', form = 'formatted',
+!     &      status = 'new', access = 'sequential')
+      open (unit = 18, file = 'atlas9.jnu',
+     &      status = 'replace', access = 'stream',
+     $      form = 'formatted')
+
 !      open (unit = 3, file = 'continuum.dat', form = 'formatted',
 !     &      status = 'new', access = 'sequential') !write file in josh and close here at the end! 
 
@@ -981,8 +993,14 @@ c     exp10(x) = exp(x * 2.30258509299405d0)
          more = readi0 (mode1)
 *
          if(more) then
-            read (33,*) nmod
-            read (33,*) nrhox
+
+!            read (33,*) nmod
+!            read (33,*) nrhox
+
+            nmod = 1
+
+            nrhox = num_of_lines(atm_mod_file)
+
             if(nrhox .gt. maxd) then
                write( *,*) ' nrhox = ', nrhox, ', which is > maxd'
                stop
@@ -998,9 +1016,10 @@ c     exp10(x) = exp(x * 2.30258509299405d0)
 ! This loops over several models, if they are provdied 
 ! nmod = number of models ------------------------------------!
             do imod = 1, nmod 
-               open (unit = 41, file = 'atlas9.wave',
-     &        form = 'formatted', status = 'new',
-     &        access = 'sequential')
+
+!               open (unit = 41, file = 'atlas9.wave',
+!     &        form = 'formatted', status = 'new',
+!     &        access = 'sequential')
 * 
 *     READ MODEL
 *
@@ -1996,6 +2015,7 @@ c                        if (stopfl) stop
 *********** E N D   O F   F U N C T I O N   M A P 1 ********************
 *
       subroutine output
+
       implicit none
 *
 *.... MODIFIED TO PRINT OUT <JUN(J)> FOR IFPRNT => 1
@@ -2049,6 +2069,10 @@ c                        if (stopfl) stop
       logical    header
       save       contin, header, hsurf, jbar, n, nsteps, nu, 
      &           surfin, wave
+
+      real*8 ::  disurfin, rw, mint
+
+      real*8, allocatable, dimension(:) :: ip
 *
 *--------------------------- EQUIVALENCE -------------------------------
 *
@@ -2069,9 +2093,16 @@ c                        if (stopfl) stop
      &                      'title', title
 111         format (a, f8.0, a9, f8.5, 1x, a / a6, a )
             if(ifsurf .eq. 2) then
-               write(17, 112) nmu, 'angles',
-     &                                       (angle(mu), mu = 1, nmu)
-112            format(i3, a7, 10f7.4 / 10x, 10f7.4)
+
+               write(17, '(A,/)') 'disk integrated and
+     $ mu-dependent intensity'
+
+               write(17, 112) 'wvl', 'disk', (angle(mu), mu = 1, nmu)
+
+112            format(4x,a3,9x,a4,11(5x,f7.2),/)
+!               write(17, 112) nmu, 'angles',
+!     &                                       (angle(mu), mu = 1, nmu)
+!112            format(i3, a7, 10f7.4 / 10x, 10f7.4)
 *
             else if (ifsurf .lt. 2) then
                write (17, 114) '#', 'wave', 'freq', 'flux', 
@@ -2291,13 +2322,37 @@ c                        if (stopfl) stop
       if(ifpnch .ge. 2) then
 *
          if (ifsurf .eq. 2) then
-            write (41, 441) wave
-441         format (f10.2)
-            write (17, 416) (surfin(mu), mu = 1, nmu)
-416         format ((1p8e11.3))
+
+!            write (41, 441) wave
+!441         format (f10.2)
+
+!            write (17, 416) (surfin(mu), mu = 1, nmu)
+!416         format ((1p8e11.3))
+
 c            write (17, 416) nu, wave, freq,
 c     &                      (surfin(mu), mu = 1, nmu)
 c416         format (i5, f10.2, 1pe15.6, / (1p8e10.3))
+
+            allocate(ip(nmu))
+
+            ip = dsqrt(1.0d0 - angle(1 : nmu)**2.0d0)
+
+            disurfin = 0.0d0
+
+            do mu = 2, nmu
+
+               rw = ip(mu)**2.0d0 - ip(mu - 1)**2.0d0
+
+               mint = (surfin(mu) + surfin(mu - 1)) / 2.0d0
+
+               disurfin = disurfin + mint * rw
+
+            enddo
+
+            deallocate(ip)
+
+            write (17, 416) wave, disurfin, (surfin(mu), mu = 1, nmu)
+416         format (es10.3,12(2x,es10.3))
 
 *
          else if (ifsurf .lt. 2) then
