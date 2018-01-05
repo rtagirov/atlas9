@@ -1078,7 +1078,9 @@ c     exp10(x) = exp(x * 2.30258509299405d0)
 !               print * , 'v_turb ()', vturb(j) 
 !                write (7,*) xnatom(j), rhox(j), rho(j) 
 
-               end do 
+                 write(*, '(a,2x,i2,2x,es10.3)'), '1st', j, xnatom(j)
+
+               enddo
 *
 c	       print *, ' *** Model ', imod 
                iter  = imod 
@@ -1126,11 +1128,27 @@ c	       print *, ' *** Model ', imod
                   call pops(0.0d0, 1, xne)
                end if
 
-               if (.not. nltepop) call pops(0.0d0, 1, xne)
+               call system('rm -vf hydpops.out')
+               call system('rm -vf hminus.out')
+
+               call read_nlte_file()
+
+               if (.not. nltepop) then
+
+                    call pops(0.0d0, 1, xne)
+
+                    do j = 1, nrhox
+
+!                       write(*, '(A,2x,i2,2x,es10.3)'), '2nd', j, xnatom(j)
+                       print*, '2nd', j, xnatom(j)
+
+                    enddo
+
+               endif
 
                if (nltepop) then
 
-!                  allocate(bhii(nrhox))
+                  allocate(bhii(nrhox))
                   allocate(val(nrhox))
 
                   call read_nlte_lev(nrhox, 'ELECTR', 'pop', val)
@@ -1149,6 +1167,8 @@ c	       print *, ' *** Model ', imod
                   enddo
 
 !                  call read_nlte_lev(nrhox, 'HII', 'dep', bhii)
+
+                  bhii(1 : nrhox) = 1.0
 
                   deallocate(val)
 

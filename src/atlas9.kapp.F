@@ -104,7 +104,8 @@
 *
       subroutine hop
 
-!      use nlte
+      use nlte
+!      use file_operations
 
       implicit none
 *
@@ -122,6 +123,8 @@
       include 'common.rhoxbl'
       include 'common.stateb'
       include 'common.tempbl'
+
+      include 'common.elembl'
 *
 *-------------------------------- EXTERNALS ---------------------------
 *
@@ -134,6 +137,12 @@
      &                  hyd, s, xkarsas, xr
       save bolt, boltex, exlim, freet, xr
       integer itemp1, j, n
+
+      logical :: exists
+
+      real*8, dimension(nrhox, 8) :: bolt_r
+
+      integer :: i
 *
 *---------------------------- INITIALIZATION --------------------------
 *
@@ -141,6 +150,10 @@
       data itemp1 / 0 /
 *
 *------------------------------- EXECUTION ----------------------------
+
+!      print*, abund(1)
+
+!      stop
 *
       if (itemp .ne. itemp1) then
          itemp1 = itemp
@@ -148,14 +161,21 @@
          do j = 1, nrhox
 *
             do n = 1, 8
-               bolt(j, n) = exp( -(hydip - hydip / dble(n*n) ) /
+               bolt(j, n) = exp(-(hydip - hydip / dble(n*n)) /
      &           tkev(j) ) * 2.0d0 * dble(n*n) * xnfph(j,1) / rho(j)
             end do
 *
             do n = 1, 8
+
                bolt(j, n) = bolt(j, n) * bhyd(j, n)
+
+               bolt_r(j, n) = bolt(j, n) * rho(j) / xnatom(j)
+!               bolt_r(j, n) = bolt(j, n) * rho(j) * abund(1)
+!               bolt_r(j, n) = xnfh(j, 1)
+!               bolt_r(j, n) = bhyd(j, n)
+               
             end do
-*
+
 *.... TAKE 1.0D10 OUT OF FREET AND PUT IT WITH CFREE
             freet(j) = 1.0d-10 * xne(j) * xnfh(j,2) /
      &                 (rho(j) * sqrt(t(j)))
@@ -170,18 +190,42 @@
 *
       end if
 
-!      if (nltepop) then
+            inquire(file = 'hydpops.out', exist = exists)
+
+            if (.not. exists) then
+
+!               call open_to_append(1432, 'hydpops.out')
+               open(unit = 1432, file = 'hydpops.out', action = 'write')
+
+               write(1432, '(9(es10.3,2x))') (bolt_r(i, 1),
+     $                                        bolt_r(i, 2),
+     $                                        bolt_r(i, 3),
+     $                                        bolt_r(i, 4),
+     $                                        bolt_r(i, 5),
+     $                                        bolt_r(i, 6),
+     $                                        bolt_r(i, 7),
+     $                                        bolt_r(i, 8),
+     $                                        xnfh(i, 2) / xnatom(i),
+     $                                        i = 1, nrhox)
+
+               close(unit = 1432)
+
+            endif
+
+!      do j = 1, nrhox
+
+!         print*, j, bhii(j)
+
+!      enddo
+
+      if (nltepop) then
+
+           freet(1 : nrhox) = freet(1 : nrhox) * bhii(1 : nrhox)
 
 !          boltex(1 : nrhox) = boltex(1 : nrhox) * bhii(1 : nrhox)
 !          exlim(1 : nrhox) =  exlim(1 : nrhox)  * bhii(1 : nrhox)
 
-!      endif
-
-!      do j = 1, nrhox
-
-!         print*, j, bhyd(j, 7), bhyd(j, 8)
-
-!      enddo
+      endif
 
 !      stop
 
@@ -437,6 +481,8 @@
       integer          i, itemp1, itheta, iwave, j, map1, maxwave
       logical          start
       save itemp1, start, fflog, theta, wfflog, xhmin
+
+      logical :: exists
 *
 *------------------------------ EXTERNAL FUNCTION ----------------------
 *
@@ -553,6 +599,21 @@
          end do
 *
       end if
+
+      inquire(file = 'hminus.out', exist = exists)
+
+      if (.not. exists) then
+
+         open(unit = 1433, file = 'hminus.out', action = 'write')
+
+         write(1433, '(3(es10.3,2x))') (xhmin(i) / xnatom(i),
+     $                                xne(i) / xnatom(i),
+     $                                xnatom(i),
+     $                                i = 1, nrhox)
+
+         close(unit = 1433)
+
+      endif
 *
       wave    = 2.99792458d17 / freq
       wavelog(1) = log(wave)

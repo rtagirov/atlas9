@@ -1,6 +1,6 @@
 read punch
 opacity ifop 1 1 1 1 1 1 1 1 1 1 1 1 1 0 1 0 0 0 0 0
-correction on 
+correction off 
 molecules off    
 read molecules
 iterations 1

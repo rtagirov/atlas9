@@ -4,6 +4,8 @@
 
       character (len=9), parameter :: atm_mod_file = 'atmod.inp'
 
+      character (len=8), parameter :: nlte_file = 'nlte.inp'
+
       character (len=8), parameter :: spec_file = 'spec.out'
 
       character (len=9), parameter :: print_file = 'print.out'
@@ -74,8 +76,8 @@
       if (.not. file_exists) open(unit = file_unit, file = file_name,
      $                            status = 'new', action = 'write')
 
-      if (file_exists)       open(unit = file_unit, file = file_name, 
-     $                            action = 'write', status = 'old', 
+      if (file_exists)       open(unit = file_unit, file = file_name,
+     $                            status = 'old', action = 'write',
      $                            position = 'append')
 
 !      ENDSELECT

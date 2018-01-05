@@ -2,10 +2,9 @@
 
       implicit none
 
-      logical, parameter :: nltepop = .true.
-!      logical, parameter :: nltepop = .false.
+      logical :: nltepop
 
-!      real*8, allocatable, dimension(:) :: bhii
+      real*8, allocatable, dimension(:) :: bhii
 
       contains
 
@@ -56,6 +55,29 @@
       deallocate(val3)
       deallocate(val4)
       deallocate(val5)
+
+      return
+
+      end
+
+      subroutine read_nlte_file()
+
+      use file_operations
+
+      integer :: un
+
+      character (len = 3) :: str
+
+      un = 1532
+
+      open(unit = un, file = nlte_file, action = 'read')
+
+      read(un, *) str
+
+      if (trim(adjustl(str)) .eq. 'off') nltepop = .false.
+      if (trim(adjustl(str)) .eq. 'on')  nltepop = .true.
+
+      close(un)
 
       return
 
