@@ -52,7 +52,7 @@
 *
 
 
-      include 'common.odfnlte'
+      include 'common.odfnlt'
 
      
 
@@ -1078,7 +1078,7 @@ c     exp10(x) = exp(x * 2.30258509299405d0)
 !               print * , 'v_turb ()', vturb(j) 
 !                write (7,*) xnatom(j), rhox(j), rho(j) 
 
-                 write(*, '(a,2x,i2,2x,es10.3)'), '1st', j, xnatom(j)
+!                 write(*, '(a,2x,i2,2x,es10.3)'), '1st', j, xnatom(j)
 
                enddo
 *
@@ -1137,12 +1137,12 @@ c	       print *, ' *** Model ', imod
 
                     call pops(0.0d0, 1, xne)
 
-                    do j = 1, nrhox
+!                    do j = 1, nrhox
 
 !                       write(*, '(A,2x,i2,2x,es10.3)'), '2nd', j, xnatom(j)
-                       print*, '2nd', j, xnatom(j)
+!                       print*, '2nd', j, xnatom(j)
 
-                    enddo
+!                    enddo
 
                endif
 
@@ -1166,7 +1166,7 @@ c	       print *, ' *** Model ', imod
 
                   enddo
 
-!                  call read_nlte_lev(nrhox, 'HII', 'dep', bhii)
+                  call read_nlte_lev(nrhox, 'HII', 'dep', bhii)
 
                   bhii(1 : nrhox) = 1.0
 
@@ -1185,8 +1185,9 @@ c	       print *, ' *** Model ', imod
                call pops(14.01d0, 11, xnfpsi)
                call pops(20.01d0, 11, xnfpca)
                call pops(26.00d0, 11, xnfpfe)
-*
+
                if (.not. ifmol) then
+
                   call pops( 1.01d0, 12, xnfh)
                   call pops( 2.02d0, 12, xnfhe)
                   call pops( 6.05d0, 12, xnfc)
@@ -1197,8 +1198,9 @@ c	       print *, ' *** Model ', imod
                   call pops(14.05d0, 12, xnfsi)
                   call pops(16.05d0, 12, xnfs)
                   call pops(26.04d0, 12, xnffe)
-*
+
                else
+
                   call pops(106.00d0, 11, xnfpch)
                   call pops(108.00d0, 11, xnfpoh)
 *
@@ -1213,9 +1215,9 @@ c	       print *, ' *** Model ', imod
                   call pops(14.05d0, 11, xnfsi)
                   call pops(16.05d0, 11, xnfs)
                   call pops(26.04d0, 11, xnffe)
-*
+
                   do j = 1,nrhox
-*
+
                      call pfsaha(j, 1, 1, 3, part)
                      xnfh(j, 1) = xnfph(j, 1) * part(j, 1)
                      xnfh(j, 2) = xnfph(j, 2)
@@ -2133,13 +2135,13 @@ c                        if (stopfl) stop
          nu = 0
 *
          if (ifpnch .ge. 2) then
-            write (17, 111) 'teff', teff, 'gravity', glog, wlte, 
-     &                      'title', title
+!            write (17, 111) 'teff', teff, 'gravity', glog, wlte, 
+!     &                      'title', title
 111         format (a, f8.0, a9, f8.5, 1x, a / a6, a )
             if(ifsurf .eq. 2) then
 
-               write(17, '(A,/)') 'disk integrated and
-     $ mu-dependent intensity'
+!               write(17, '(A,/)') 'disk integrated and
+!     $ mu-dependent intensity'
 
                write(17, 112) 'wvl', 'disk', (angle(mu), mu = 1, nmu)
 

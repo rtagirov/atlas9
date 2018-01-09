@@ -194,7 +194,6 @@
 
             if (.not. exists) then
 
-!               call open_to_append(1432, 'hydpops.out')
                open(unit = 1432, file = 'hydpops.out', action = 'write')
 
                write(1432, '(9(es10.3,2x))') (bolt_r(i, 1),
