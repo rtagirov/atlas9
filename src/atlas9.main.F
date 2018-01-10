@@ -1131,24 +1131,20 @@ c	       print *, ' *** Model ', imod
                call system('rm -vf hydpops.out')
                call system('rm -vf hminus.out')
 
+               allocate(bhii(nrhox))
+
                call read_nlte_file()
 
                if (.not. nltepop) then
 
                     call pops(0.0d0, 1, xne)
 
-!                    do j = 1, nrhox
-
-!                       write(*, '(A,2x,i2,2x,es10.3)'), '2nd', j, xnatom(j)
-!                       print*, '2nd', j, xnatom(j)
-
-!                    enddo
+                    bhii(1 : nrhox) = 1.0d0
 
                endif
 
                if (nltepop) then
 
-                  allocate(bhii(nrhox))
                   allocate(val(nrhox))
 
                   call read_nlte_lev(nrhox, 'ELECTR', 'pop', val)

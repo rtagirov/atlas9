@@ -142,6 +142,8 @@
 
       real*8, dimension(nrhox, 8) :: bolt_r
 
+      real*8 :: hyd_lte, ff
+
       integer :: i
 *
 *---------------------------- INITIALIZATION --------------------------
@@ -151,44 +153,43 @@
 *
 *------------------------------- EXECUTION ----------------------------
 
-!      print*, abund(1)
-
-!      stop
-*
       if (itemp .ne. itemp1) then
+
          itemp1 = itemp
-*
+
          do j = 1, nrhox
-*
+
             do n = 1, 8
                bolt(j, n) = exp(-(hydip - hydip / dble(n*n)) /
-     &           tkev(j) ) * 2.0d0 * dble(n*n) * xnfph(j,1) / rho(j)
+     &           tkev(j)) * 2.0d0 * dble(n*n) * xnfph(j,1) / rho(j)
             end do
-*
+
             do n = 1, 8
 
-               bolt(j, n) = bolt(j, n) * bhyd(j, n)
+!               bolt(j, n) = bolt(j, n) * bhyd(j, n)
 
                bolt_r(j, n) = bolt(j, n) * rho(j) / xnatom(j)
 !               bolt_r(j, n) = bolt(j, n) * rho(j) * abund(1)
 !               bolt_r(j, n) = xnfh(j, 1)
 !               bolt_r(j, n) = bhyd(j, n)
                
-            end do
+            enddo
 
-*.... TAKE 1.0D10 OUT OF FREET AND PUT IT WITH CFREE
-            freet(j) = 1.0d-10 * xne(j) * xnfh(j,2) /
-     &                 (rho(j) * sqrt(t(j)))
+            freet(j) = xne(j) / sqrt(t(j)) / rho(j)
 
-            xr = xnfph(j, 1) * (2.0d0 / 2.0d0 / hydip) * tkev(j) / 
-     &           rho(j)
+!            xr = xnfph(j, 1) * (2.0d0 / 2.0d0 / hydip) * tkev(j) / 
+!     &           rho(j)
 
-            boltex(j) = exp(-13.427d0 / tkev(j) ) * xr
-            exlim(j) = exp( -hydip / tkev(j) ) * xr
+!            boltex(j) = exp(-13.427d0 / tkev(j)) * xr
+!            exlim(j) =  exp(-hydip    / tkev(j)) * xr
 
-         end do
-*
-      end if
+!             print*, j, ' ', bhii(j)
+
+         enddo
+
+!         stop
+
+      endif
 
             inquire(file = 'hydpops.out', exist = exists)
 
@@ -211,59 +212,53 @@
 
             endif
 
-!      do j = 1, nrhox
-
-!         print*, j, bhii(j)
-
-!      enddo
-
-      if (nltepop) then
-
-          freet(1 : nrhox) = freet(1 : nrhox) * bhii(1 : nrhox)
-
-          boltex(1 : nrhox) = boltex(1 : nrhox) * bhii(1 : nrhox)
-          exlim(1 : nrhox) =  exlim(1 : nrhox)  * bhii(1 : nrhox)
-
-      endif
-
       do n = 1, 8
          cont(n) = xkarsas (1.0d0, n, n)
       end do
 
       freqi = 1.0d0 / freq
 
-*.... PUT IN THE FACTOR OF 1.0D10 HERE FROM FREET(J)
-
-      cfree = freqi * (freqi * (freqi * 3.6919d18))
+      cfree = freqi * (freqi * (freqi * 3.6919d8))
       c     = freqi * (freqi * (freqi * 2.8150d29))
 
       do j = 1, nrhox
 
-         ex = boltex(j)
+!        free-free transitions
+!        ----------------------------------------------------------
 
-         if (freq .lt. 4.05933d13) ex = exlim(j) / ehvkt(j)
+!         ex = boltex(j)
 
-         hyd = (cont(7) * bolt(j, 7) + cont(8) * bolt(j, 8) +
-     &       (ex-exlim(j)) * c + coulff(j, 1) * cfree * freet(j)) *
-     &        stim(j)
+!         if (freq .lt. 4.05933d13) ex = exlim(j) / ehvkt(j)
+
+!         bf = (cont(7) * bolt(j, 7) + cont(8) * bolt(j, 8) + (ex - exlim(j)) * c) * stim(j)
+
+         ff = bhii(j) * xnfh(j, 2) * freet(j) * coulff(j, 1) * cfree * stim(j)
+
+!         hyd = bf + ff
+         hyd = ff
 
          s = hyd * bnu(j)
-*
+!        ----------------------------------------------------------
+
+!        bound-free transitions
+!        ----------------------------------------------------------
          do n = 1, 8
 
-            hyd = hyd + cont(n) * bolt(j, n) * (1.0d0 - ehvkt(j) /
-     &              bhyd(j, n))
+            hyd = hyd + bhyd(j, n) * bolt(j, n) * cont(n) *
+     $            (1.0d0 - ehvkt(j) * bhii(j) / bhyd(j, n))
 
-            s = s + cont(n) * bolt(j, n) * bnu(j) * stim(j) /
-     &              bhyd(j, n)
+            hyd_lte = bolt(j, n) * cont(n) * stim(j)
+
+            s = s + hyd_lte * bhii(j) * bnu(j)
 
          end do
-*
+!        ----------------------------------------------------------
+
          ahyd(j) = hyd
          shyd(j) = s / hyd
 
       end do
-*
+
       end
 *
 *********** E N D   O F   S U B R O U T I N E   H O P ********************* 
