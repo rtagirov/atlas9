@@ -1168,7 +1168,7 @@ c	       print *, ' *** Model ', imod
 
                   call read_nlte_lev(nrhox, 'HII', 'dep', bhii)
 
-                  bhii(1 : nrhox) = 1.0
+!                  bhii(1 : nrhox) = 1.0
 
                   deallocate(val)
 

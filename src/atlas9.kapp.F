@@ -219,44 +219,49 @@
 
       if (nltepop) then
 
-           freet(1 : nrhox) = freet(1 : nrhox) * bhii(1 : nrhox)
+          freet(1 : nrhox) = freet(1 : nrhox) * bhii(1 : nrhox)
 
-!          boltex(1 : nrhox) = boltex(1 : nrhox) * bhii(1 : nrhox)
-!          exlim(1 : nrhox) =  exlim(1 : nrhox)  * bhii(1 : nrhox)
+          boltex(1 : nrhox) = boltex(1 : nrhox) * bhii(1 : nrhox)
+          exlim(1 : nrhox) =  exlim(1 : nrhox)  * bhii(1 : nrhox)
 
       endif
 
-!      stop
-
-*
       do n = 1, 8
          cont(n) = xkarsas (1.0d0, n, n)
       end do
-*
+
       freqi = 1.0d0 / freq
-*
+
 *.... PUT IN THE FACTOR OF 1.0D10 HERE FROM FREET(J)
-*
-      cfree = freqi * (freqi * (freqi * 3.6919d18 ) )
-      c     = freqi * (freqi * (freqi * 2.815d29 ) )
-*
+
+      cfree = freqi * (freqi * (freqi * 3.6919d18))
+      c     = freqi * (freqi * (freqi * 2.8150d29))
+
       do j = 1, nrhox
+
          ex = boltex(j)
+
          if (freq .lt. 4.05933d13) ex = exlim(j) / ehvkt(j)
+
          hyd = (cont(7) * bolt(j, 7) + cont(8) * bolt(j, 8) +
      &       (ex-exlim(j)) * c + coulff(j, 1) * cfree * freet(j)) *
      &        stim(j)
+
          s = hyd * bnu(j)
 *
          do n = 1, 8
-            hyd = hyd + cont(n) * bolt(j, n) * (1.0d0 - ehvkt(j) / 
+
+            hyd = hyd + cont(n) * bolt(j, n) * (1.0d0 - ehvkt(j) /
      &              bhyd(j, n))
-            s = s + cont(n) * bolt(j, n) * bnu(j) * stim(j) / 
+
+            s = s + cont(n) * bolt(j, n) * bnu(j) * stim(j) /
      &              bhyd(j, n)
+
          end do
 *
          ahyd(j) = hyd
          shyd(j) = s / hyd
+
       end do
 *
       end
