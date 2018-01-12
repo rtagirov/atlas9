@@ -4,11 +4,11 @@
 
       contains
 
-      function int_to_char(IntNum) RESULT(CharNum)
+      function str(int_num) result(str_num)
 
-      INTEGER, INTENT(IN) :: IntNum
+      integer, intent(in) :: int_num
 
-      CHARACTER (len = 10) :: CharNum
+      character (len = 10) :: str_num
 
 !      IF (IntNum .LE. 9) THEN
 
@@ -32,13 +32,13 @@
 
 !      ENDIF
 
-      WRITE(CharNum, '(I10)') IntNum
+      write(str_num, '(I10)') int_num
 
-      CharNum = TRIM(ADJUSTL(CharNum))
+      str_num = trim(adjustl(str_num))
 
       return
 
-      end function int_to_char
+      end function
 
 
       FUNCTION RM_CHAR(in_str, target_char) RESULT(out_str)

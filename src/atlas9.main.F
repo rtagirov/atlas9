@@ -2,7 +2,7 @@
 
       use string_operations
       use file_operations
-      use nlte
+      use nlte_module
 
       implicit none
  
@@ -97,7 +97,6 @@
       include 'common.xnfblk'
       include 'common.xnfpbl'
       include 'common.xnmolb'
-
       include 'common.freebl'
 
 
@@ -108,11 +107,10 @@
 *
       double precision  contin, freq15, part(maxd, 6), rco,  
      &                  rcowt, stepwt, sumwt, wave, x, rosstab, asixth
-*     double precision exp10
+
       integer  i, j, mm,  mode1, n, nsteps, nu, nmod, imod
       logical  finish, more, readi0, stopfl
 
-      real*8, dimension(:), allocatable :: val
 *
 *-------------------------------  EXTERNALS ----------------------------
 *
@@ -121,6 +119,7 @@
      &         pops, radiap, radiap2, radiap3, readi0, ross, ross2, 
      &         ross3, stateq, stateq2, stateq3, tcorr, tcorr2, tcorr3, 
      &         turb, xlinop, xlisop, rosstab
+
       character lit*1
 
 
@@ -184,7 +183,6 @@
 *
 *--------------------------- STATEMENT FUNCTION -----------------------
 *
-c     exp10(x) = exp(x * 2.30258509299405d0)
 *
 
 #ifdef ODF
@@ -1116,57 +1114,35 @@ c	       print *, ' *** Model ', imod
 9002                    format (a, i5, a, 1pe15.4, / ,
      &                         4x, a, 8x, a, 9x, a, 7x, a /
      &                         (i5, 3e15.4))
-!                        print *, ' pressure le 0 at depth ', j
+
                         stop
+
                       end if
+
                      end if
-*
+
                   end do
+
 !-----------------------------------------------------------*
+
                   ifedns = .false.
 
                   call pops(0.0d0, 1, xne)
+
                end if
 
                call system('rm -vf hydpops.out')
                call system('rm -vf hminus.out')
 
-               allocate(bhii(nrhox))
+               call nlte_elem(nrhox)
 
-               call read_nlte_file()
+               if (.not. any(nlte)) then ! LTE ELECTRON CONCENTRATION
 
-               if (.not. nltepop) then
+                   call pops(0.0d0, 1, xne)
 
-                    call pops(0.0d0, 1, xne)
+               else ! READ NLTE ELECTRON CONCENTRATION AND ALL RELEVANT NLTE DEPARTURES
 
-                    bhii(1 : nrhox) = 1.0d0
-
-               endif
-
-               if (nltepop) then
-
-                  allocate(val(nrhox))
-
-                  call read_nlte_lev(nrhox, 'ELECTR', 'pop', val)
-
-                  xne(1 : nrhox) = xnatom(1 : nrhox) * val(1 : nrhox)
-
-                  call read_nlte_lev(nrhox, 'HMINUS', 'dep', bmin)
-
-                  do n = 1, 8
-
-                    call read_nlte_lev(nrhox, 'HI'//int_to_char(n), 
-     $                                 'dep', val)
-
-                    bhyd(1 : nrhox, n) = val(1 : nrhox)
-
-                  enddo
-
-                  call read_nlte_lev(nrhox, 'HII', 'dep', bhii)
-
-!                  bhii(1 : nrhox) = 1.0
-
-                  deallocate(val)
+                   call nlte_depart(nrhox)
 
                endif
 
@@ -1359,6 +1335,7 @@ c	       print *, ' *** Model ', imod
 *
                      nsteps = 1
                      stepwt = 1.0d0
+
                      call kapp
 *
                      if (ifop(14) .or. ifop(17) .or. ifop(18)) then

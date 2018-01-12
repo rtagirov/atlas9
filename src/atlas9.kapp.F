@@ -63,13 +63,13 @@
 *.... EACH CALL TO KAPP USES DUMMY TO INITIALIZE ALL OPACITIES TO 0.0
 *
       do i = 1, 37
-*
+
          do  j = 1, nrhox
             dummy(j, i) = 0.0d0
          end do
-*
+
       end do
-*
+
       if (ifop(1)) call hop
       if (ifop(2) .and. freq .le. 3.28805d15) call h2plop
       if (ifop(3)) call hminop
@@ -85,37 +85,42 @@
       if (ifop(13)) call h2raop
       if (ifop(19)) call xconop
       if (ifop(20)) call xsop
-*
+
       do j = 1, nrhox
-         a         = ah2p(j) + ahe1(j) + ahe2(j) + ahemin(j) + 
+
+         a         = ah2p(j) + ahe1(j) + ahe2(j) + ahemin(j) +
      &               acool(j) + aluke(j) + ahot(j)
+
          acont(j)  = a + ahyd(j) + ahmin(j) + axcont(j)
+
          scont(j)  = bnu(j)
-         if (acont(j) .gt. 0.0d0) scont(j) = 
-     &               (a * bnu(j) + ahyd(j) * shyd(j) + 
-     &                ahmin(j)* shmin(j) + axcont(j) * sxcont(j)) / 
+
+         if (acont(j) .gt. 0.0d0) scont(j) =
+     &               (a * bnu(j) + ahyd(j) * shyd(j) +
+     &                ahmin(j)* shmin(j) + axcont(j) * sxcont(j)) /
      &                acont(j)
+
          sigmac(j) = sigh(j) + sighe(j) + sigel(j) + sigh2(j) +sigx(j)
-      end do            
-*
+
+      enddo
+
       end
+
 *
 *********** E N D   O F   S U B R O U T I N E   K A P P ****************
 *
       subroutine hop
 
-      use nlte
-!      use file_operations
+      use nlte_module
 
       implicit none
-*
+
 *.... REQUIRES COULFF AND XKARSAS
 *
 *-------------------------------- COMMONS -----------------------------
-*
+
       include 'common.sizebl'
       include 'common.constb'
-*
       include 'common.depart'
       include 'common.freqbl'
       include 'common.ionsbl'
@@ -123,8 +128,8 @@
       include 'common.rhoxbl'
       include 'common.stateb'
       include 'common.tempbl'
-
       include 'common.elembl'
+
 *
 *-------------------------------- EXTERNALS ---------------------------
 *
@@ -212,9 +217,7 @@
 
             endif
 
-      do n = 1, 8
-         cont(n) = xkarsas (1.0d0, n, n)
-      end do
+      do n = 1, 8; cont(n) = xkarsas (1.0d0, n, n); end do
 
       freqi = 1.0d0 / freq
 
@@ -1528,6 +1531,7 @@
 *********** E N D   O F   S U B R O U T I N E   H E R A O P ************
 *
       subroutine coolop
+
       implicit none
 *
 *.... SI1, MG1, AL1, C1, FE1, OH, CH
@@ -1552,33 +1556,29 @@
       external al1op, c1op, chop, fe1op, mg1op, ohop, si1op
 *
 *------------------------------- EXECUTION ----------------------------
-!     &               mg1op(j) * xnfpmg(j,1) +
-!     &               si1op(j) * xnfpsi(j,1) +
-!
 *
       do j = 1, nrhox
-         acool(j) = (c1op(j)  * xnfpc(j,1)  + 
-     &               al1op(j) * xnfpal(j,1) + 
-     &               mg1op(j) * xnfpmg(j,1) +
-     &               si1op(j) * xnfpsi(j,1) +
-     &               fe1op(j) * xnfpfe(j,1) +
-     &               chop(j)  * xnfpch(j)   +
-     &               ohop(j)  * xnfpoh(j))  * stim(j) / rho(j)
+
+         acool(j) = (al1op(j) * xnfpal(j, 1) +
+     &               mg1op(j) * xnfpmg(j, 1) +
+     &               si1op(j) * xnfpsi(j, 1) +
+     &               chop(j)  * xnfpch(j)    +
+     &               ohop(j)  * xnfpoh(j))   * stim(j) +
+!    stimulated emission for CI and FeI is accounted for in c1op and fe1op
+     $               c1op(j)  * xnfpc(j, 1)  +
+     $               fe1op(j) * xnfpfe(j, 1)
+
       end do
-*
-!      print*,' in coolop '
-!      print*, 'freq = ', freq
-!      print*, 'c1op = ', c1op(1)
-!    !  print*, 'mg1op = ', mg1op(1) 
-!      print*, 'al1op = ', al1op(1) 
-!      print*, 'si1op = ', si1op(1) 
-!      print*, 'fe1op = ', fe1op(1) 
+
+      acool(1 : nrhox) = acool(1 : nrhox) / rho(1 : nrhox)
 
       end
+
 *
 *********** E N D   O F   S U B R O U T I N E   C O O L O P ************
 *
       double precision function al1op(j)
+
       implicit none
 *
 *.... CROSS-SECTION TIMES THE PARTITION FUNCTION
@@ -1596,17 +1596,22 @@
 *------------------------------- EXECUTION -----------------------------
 *
       if (freq .ge. 1.443d15) then
+
          al1op = 6.5d-17 * (1.443d15 / freq) ** 5 * 6.0
-*
+
       else
+
          al1op = 0.0d0
+
       end if
-*
+
       end
+
 *
 *************** E N D   O F   F U N C T I O N   A L 1 O P **************
 *
-      double precision function c1op (j)
+      double precision function c1op(j)
+
       implicit none
 *
 *.... CROSS-SECTION TIMES THE PARTITION FUNCTION
@@ -1640,32 +1645,48 @@
 *------------------------------- EXECUTION ----------------------------
 *
       if (itemp .ne. itemp1) then
+
          itemp1 = itemp
-*
+
          do k = 1, nrhox
+
             c1240(k) = 5.0 * exp(-1.264 / tkev(k))
+
             c1444(k) = exp(-2.683 / tkev(k))
+
          end do
-*
+
       end if
-*
+
       if (freq .ne. freq1) then
+
          freq1 = freq
+
          x1100 = 0.0d0
          x1240 = 0.0d0
          x1444 = 0.0d0
-*
-         if (freq .ge. 2.7254d15) x1100 = seaton (2.7254d15, 1.219d-17, 
+
+         if (freq .ge. 2.7254d15) x1100 = seaton (2.7254d15, 1.219d-17,
      &                                            2.0d0, 3.317d0)
-         if (freq .ge. 2.4196d15) x1240 = seaton (2.4196d15, 1.03d-17,  
+
+         if (freq .ge. 2.4196d15) x1240 = seaton (2.4196d15, 1.03d-17,
      &                                            1.5d0, 2.789d0)
-         if (freq .ge. 2.0761d15) x1444 = seaton (2.0761d15, 9.59d-18,  
+
+         if (freq .ge. 2.0761d15) x1444 = seaton (2.0761d15, 9.59d-18,
      &                                            1.5d0, 3.501d0)
-*
-      end if
-*
-      c1op = x1100 * 9.0 + x1240 * c1240(j) + x1444 * c1444(j)
+
+      endif
+
+      cx1100 = 9.0      * x1100
+      cx1240 = c1240(j) * x1240
+      cx1444 = c1444(j) * x1444
+
+      c1op = cx1100 * (bCI(j, 1) - bCII(j) * ehvkt(j)) +
+     $       cx1240 * (bCI(j, 2) - bCII(j) * ehvkt(j)) +
+     $       cx1444 * (bCI(j, 3) - bCII(j) * ehvkt(j))
+
       end
+
 *
 *************** E N D   O F   F U N C T I O N   C 1 O P ****************
 *
@@ -2272,7 +2293,8 @@
 *
 *************** E N D   O F   F U N C T I O N   C H O P ****************
 *
-      double precision function fe1op (j)
+      double precision function fe1op(j)
+
       implicit none
 *
 *.... CROSS-SECTION TIMES PARTITION FUNCTION
@@ -2298,82 +2320,102 @@
 *
 *----------------------------- INITIALIZATION --------------------------
 *
-      data itemp1 / 0 /, freq1/ 0.0d0 /
-*
-      data e /     500.0,  7500.0, 12500.0, 17500.0, 19000.0, 19500.0, 
-     &           19500.0, 21000.0, 22000.0, 23000.0, 23000.0, 24000.0, 
-     &           24000.0, 24500.0, 24500.0, 26000.0, 26500.0, 26500.0, 
-     &           27000.0, 27500.0, 28500.0, 29000.0, 29500.0, 29500.0, 
-     &           29500.0, 30000.0, 31500.0, 31500.0, 33500.0, 33500.0, 
-     &           34000.0, 34500.0, 34500.0, 35000.0, 35500.0, 37000.0, 
-     &           37000.0, 37000.0, 38500.0, 40000.0, 40000.0, 41000.0, 
-     &           41000.0, 43000.0, 43000.0, 43000.0, 43000.0, 44000.0/
-*
-      data g /      25.0,    35.0,    21.0,    15.0,     9.0,    35.0, 
-     &              33.0,    21.0,    27.0,    49.0,     9.0,    21.0, 
-     &              27.0,     9.0,     9.0,    25.0,    33.0,    15.0, 
-     &              35.0,     3.0,     5.0,    11.0,    15.0,    13.0, 
-     &              15.0,     9.0,    21.0,    15.0,    21.0,    25.0, 
-     &              35.0,     9.0,     5.0,    45.0,    27.0,    21.0, 
-     &              15.0,    21.0,    15.0,    25.0,    21.0,    35.0,  
+      data itemp1 / 0 /, freq1 / 0.0d0 /
+
+      data e /     500.0,  7500.0, 12500.0, 17500.0, 19000.0, 19500.0,
+     &           19500.0, 21000.0, 22000.0, 23000.0, 23000.0, 24000.0,
+     &           24000.0, 24500.0, 24500.0, 26000.0, 26500.0, 26500.0,
+     &           27000.0, 27500.0, 28500.0, 29000.0, 29500.0, 29500.0,
+     &           29500.0, 30000.0, 31500.0, 31500.0, 33500.0, 33500.0,
+     &           34000.0, 34500.0, 34500.0, 35000.0, 35500.0, 37000.0,
+     &           37000.0, 37000.0, 38500.0, 40000.0, 40000.0, 41000.0,
+     &           41000.0, 43000.0, 43000.0, 43000.0, 43000.0, 44000.0 /
+
+      data g /      25.0,    35.0,    21.0,    15.0,     9.0,    35.0,
+     &              33.0,    21.0,    27.0,    49.0,     9.0,    21.0,
+     &              27.0,     9.0,     9.0,    25.0,    33.0,    15.0,
+     &              35.0,     3.0,     5.0,    11.0,    15.0,    13.0,
+     &              15.0,     9.0,    21.0,    15.0,    21.0,    25.0,
+     &              35.0,     9.0,     5.0,    45.0,    27.0,    21.0,
+     &              15.0,    21.0,    15.0,    25.0,    21.0,    35.0,
      &               5.0,    15.0,    45.0,    35.0,    55.0,    25.0 /
+
+      data wno / 63500.0, 58500.0, 53500.0, 59500.0, 45000.0, 44500.0,
+     &           44500.0, 43000.0, 58000.0, 41000.0, 54000.0, 40000.0,
+     &           40000.0, 57500.0, 55500.0, 38000.0, 57500.0, 57500.0,
+     &           37000.0, 54500.0, 53500.0, 55000.0, 34500.0, 34500.0,
+     &           34500.0, 34000.0, 32500.0, 32500.0, 32500.0, 32500.0,
+     &           32000.0, 29500.0, 29500.0, 31000.0, 30500.0, 29000.0,
+     &           27000.0, 54000.0, 27500.0, 24000.0, 47000.0, 23000.0,
+     &           44000.0, 42000.0, 42000.0, 21000.0, 42000.0, 42000.0 /
+
 *
-      data wno / 63500.0, 58500.0, 53500.0, 59500.0, 45000.0, 44500.0, 
-     &           44500.0, 43000.0, 58000.0, 41000.0, 54000.0, 40000.0, 
-     &           40000.0, 57500.0, 55500.0, 38000.0, 57500.0, 57500.0, 
-     &           37000.0, 54500.0, 53500.0, 55000.0, 34500.0, 34500.0, 
-     &           34500.0, 34000.0, 32500.0, 32500.0, 32500.0, 32500.0, 
-     &           32000.0, 29500.0, 29500.0, 31000.0, 30500.0, 29000.0, 
-     &           27000.0, 54000.0, 27500.0, 24000.0, 47000.0, 23000.0, 
-     &           44000.0, 42000.0, 42000.0, 21000.0, 42000.0, 42000.0/
+*------------------------------- EXECUTION -----------------------------
 *
-*------------------------------- EXECUTION -- --------------------------
-*
+
       if (itemp .ne. itemp1) then
-         freq1 = 0.0d0
-         itemp1=itemp
-*
+
+         freq1  = 0.0d0
+
+         itemp1 = itemp
+
          do k = 1, nrhox
-*
+
+            do i = 1, 5
+
+               bolt(i, k) = bFeI(k, i) * g(i) * exp(-e(i) * 2.99792458d10 * hkt(k))
+
+            end do
+
             do i = 1, 48
+
                bolt(i, k) = g(i) * exp(-e(i) * 2.99792458d10 * hkt(k))
+
             end do
-*
+
          end do
-*
+
       end if
-*
+
       if (freq .ne. freq1) then
+
          freq1 = freq
-*
+
          if (waveno .ge. 21000.0d0) then
-*
+
             do i = 1, 48
+
                xsect(i) = 0.0d0
-               if (wno(i) .lt. waveno) xsect(i) =  3.0d-18 / 
-     &            (1.0d0 + ((wno(i) + 3000.0d0 - waveno) / 
+
+               if (wno(i) .lt. waveno) xsect(i) =  3.0d-18 /
+     &            (1.0d0 + ((wno(i) + 3000.0d0 - waveno) /
      &            wno(i) / 0.1d0) ** 4)
+
             end do
-*
+
          end if
-*
+
       end if
-*
+
       fe1op = 0.0d0
-*
+
       if (waveno .ge. 21000.0d0) then
-*
+
          do i = 1, 48
-            fe1op = fe1op + xsect(i) * bolt(i,j)
+
+            fe1op = fe1op + xsect(i) * bolt(i, j)
+
          end do
-*
+
       end if
-*
+
       end
+
 *
 *************** E N D   O F   F U N C T I O N   F E 1 O P **************
 *
-      double precision function mg1op (j)
+      double precision function mg1op(j)
+
       implicit none
 *
 *.... CROSS-SECTION TIMES THE PARTITION FUNCTION
@@ -2396,6 +2438,7 @@
 *
       double precision   d, d1, dt(maxd), flog(9), freq1, freqmg(7), 
      &                   peach(7, 15), tlg(7), x(7)
+
       integer  it, itemp1, k, n, nt(maxd)
       save     dt, flog, freq1, freqmg, itemp1, nt, peach, tlg, x
 *
@@ -2469,6 +2512,7 @@
 *
       n     = nt(j)
       mg1op = exp(x(n) * (1.0d0 - dt(j)) + x(n + 1) * dt(j))
+
       end
 *
 *************** E N D   O F   F U N C T I O N   M G 1 O P **************
@@ -3222,6 +3266,7 @@
 *************** E N D   O F   F U N C T I O N   S E A T O N ************
 *
       double precision function si1op(j)
+
       implicit none
 *
 *.... CROSS-SECTION TIMES THE PARTITION FUNCTION

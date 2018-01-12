@@ -4,7 +4,7 @@
 
       character (len=9), parameter :: atm_mod_file = 'atmod.inp'
 
-      character (len=8), parameter :: nlte_file = 'nlte.inp'
+      character (len=8), parameter :: nlte_file = 'DATOM_NLTE'
 
       character (len=8), parameter :: spec_file = 'spec.out'
 
