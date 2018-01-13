@@ -12,6 +12,9 @@
       real*8, allocatable, dimension(:, :) :: bMgI
       real*8, allocatable, dimension(:) ::    bMgII
 
+      real*8, allocatable, dimension(:) ::    bAlI
+      real*8, allocatable, dimension(:) ::    bAlII
+
       real*8, allocatable, dimension(:, :) :: bSiI
       real*8, allocatable, dimension(:) ::    bSiII
 
@@ -36,33 +39,39 @@
 
       nlte(1 : 30) = .false.
 
-      allocate(bHII (nrhox   ))
+      allocate(bHII (   nrhox))
 
-      allocate(bCI  (nrhox, 3))
-      allocate(bCII (nrhox   ))
+      allocate(bCI  (3, nrhox))
+      allocate(bCII (   nrhox))
 
-      allocate(bMgI (nrhox, 3))
-      allocate(bMgII(nrhox   ))
+      allocate(bMgI (3, nrhox))
+      allocate(bMgII(   nrhox))
 
-      allocate(bSiI (nrhox, 6))
-      allocate(bSiII(nrhox   ))
+      allocate(bAlI (   nrhox))
+      allocate(bAlII(   nrhox))
 
-      allocate(bFeI (nrhox, 5))
-      allocate(bFeII(nrhox   ))
+      allocate(bSiI (6, nrhox))
+      allocate(bSiII(   nrhox))
 
-      bHII (1 : nrhox)        = 1.0d0
+      allocate(bFeI (5, nrhox))
+      allocate(bFeII(   nrhox))
 
-      bCI  (1 : nrhox, 1 : 3) = 1.0d0
-      bCII (1 : nrhox)        = 1.0d0
+      bHII  = 1.0d0
 
-      bMgI (1 : nrhox, 1 : 3) = 1.0d0
-      bMgII(1 : nrhox)        = 1.0d0
+      bCI   = 1.0d0
+      bCII  = 1.0d0
 
-      bSiI (1 : nrhox, 1 : 6) = 1.0d0
-      bSiII(1 : nrhox)        = 1.0d0
+      bMgI  = 1.0d0
+      bMgII = 1.0d0
 
-      bFeI (1 : nrhox, 1 : 5) = 1.0d0
-      bFeII(1 : nrhox)        = 1.0d0
+      bAlI  = 1.0d0
+      bAlII = 1.0d0
+
+      bSiI  = 1.0d0
+      bSiII = 1.0d0
+
+      bFeI  = 1.0d0
+      bFeII = 1.0d0
 
       inquire(file = nlte_file, exist = nlte_on)
 
@@ -138,15 +147,11 @@
 
       xne(1 : nrhox) = xnatom(1 : nrhox) * val(1 : nrhox)
 
-!---------------- HYDROGEN NLTE DEPARTURE ----------------------
+!---------------- HYDROGEN NLTE DEPARTURES ----------------------
 
       if (nlte(1)) then
 
-!---------------- H^- ----------------------
-
          call nlte_lev(nrhox, 'HMINUS', 'dep', bmin)
-
-!---------------- HI ----------------------
 
          do n = 1, 8
 
@@ -156,87 +161,79 @@
 
          enddo
 
-!---------------- HII ----------------------
-
          call nlte_lev(nrhox, 'HII', 'dep', bHII)
 
       endif
 
-!---------------- CARBON NLTE DEPARTURE -------------------------
+!---------------- CARBON NLTE DEPARTURES -------------------------
 
       if (nlte(6)) then
-
-!---------------- CI ----------------------
 
          do n = 1, 3
 
             call nlte_lev(nrhox, 'CI'//str(n), 'dep', val)
 
-            bCI(1 : nrhox, n) = val(1 : nrhox)
+            bCI(n, 1 : nrhox) = val(1 : nrhox)
 
          enddo
-
-!---------------- CII ---------------------
 
          call nlte_lev(nrhox, 'CII1', 'dep', bCII)
 
       endif
 
-!---------------- MAGNESIUM NLTE DEPARTURE -------------------------
+!---------------- MAGNESIUM NLTE DEPARTURES -------------------------
 
       if (nlte(12)) then
-
-!---------------- MgI ----------------------
 
          do n = 1, 3
 
             call nlte_lev(nrhox, 'MgI'//str(n), 'dep', val)
 
-            bMgI(1 : nrhox, n) = val(1 : nrhox)
+            bMgI(n, 1 : nrhox) = val(1 : nrhox)
 
          enddo
-
-!---------------- MgII ---------------------
 
          call nlte_lev(nrhox, 'MgII1', 'dep', bMgII)
 
       endif
 
-!---------------- SILICON NLTE DEPARTURE -------------------------
+!---------------- ALUMINUM NLTE DEPARTURES -------------------------
+
+      if (nlte(13)) then
+
+         call nlte_lev(nrhox, 'AlI1',  'dep', bAlI)
+
+         call nlte_lev(nrhox, 'AlII1', 'dep', bAlII)
+
+      endif
+
+!---------------- SILICON NLTE DEPARTURES -------------------------
 
       if (nlte(14)) then
-
-!---------------- SiI ----------------------
 
          do n = 1, 6
 
             call nlte_lev(nrhox, 'SiI'//str(n), 'dep', val)
 
-            bSiI(1 : nrhox, n) = val(1 : nrhox)
+            bSiI(n, 1 : nrhox) = val(1 : nrhox)
 
          enddo
-
-!---------------- SiII ---------------------
 
          call nlte_lev(nrhox, 'SiII1', 'dep', bSiII)
 
       endif
 
-!---------------- IRON NLTE DEPARTURE -------------------------
+!---------------- IRON NLTE DEPARTURES -------------------------
 
       if (nlte(26)) then
-
-!---------------- FeI ----------------------
 
          do n = 1, 5
 
             call nlte_lev(nrhox, 'FeI'//str(n), 'dep', val)
 
-            bFeI(1 : nrhox, n) = val(1 : nrhox)
+            bFeI(n, 1 : nrhox) = val(1 : nrhox)
 
          enddo
-
-!---------------- FeII ---------------------
 
          call nlte_lev(nrhox, 'FeII1', 'dep', bFeII)
 

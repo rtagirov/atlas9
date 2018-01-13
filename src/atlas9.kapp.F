@@ -1559,13 +1559,13 @@
 *
       do j = 1, nrhox
 
-         acool(j) = (al1op(j) * xnfpal(j, 1) +
+         acool(j) = (chop(j)  * xnfpch(j)  +
+     &               ohop(j)  * xnfpoh(j)) * stim(j) +
+!    stimulated emission for CI, MgI, AlI, SiI and FeI is accounted for in the corresponding subroutines
+     $               al1op(j) * xnfpal(j, 1) +
      &               mg1op(j) * xnfpmg(j, 1) +
      &               si1op(j) * xnfpsi(j, 1) +
-     &               chop(j)  * xnfpch(j)    +
-     &               ohop(j)  * xnfpoh(j))   * stim(j) +
-!    stimulated emission for CI and FeI is accounted for in c1op and fe1op
-     $               c1op(j)  * xnfpc(j, 1)  +
+     $               c1op(j)  * xnfpc (j, 1) +
      $               fe1op(j) * xnfpfe(j, 1)
 
       end do
@@ -1597,13 +1597,17 @@
 *
       if (freq .ge. 1.443d15) then
 
-         al1op = 6.5d-17 * (1.443d15 / freq) ** 5 * 6.0
+         al1op = 6.5d-17 * (1.443d15 / freq) ** 5             ! cross-section part
 
       else
 
          al1op = 0.0d0
 
       end if
+
+      al1op = bAlI(j) * 6.0d0 * al1op                         ! population part
+
+      al1op = al1op * (1.0d0 - bAlII(j) * ehvkt(j) / bAlI(j)) ! stimulated emission part
 
       end
 
@@ -1666,24 +1670,24 @@
          x1240 = 0.0d0
          x1444 = 0.0d0
 
-         if (freq .ge. 2.7254d15) x1100 = seaton (2.7254d15, 1.219d-17,
-     &                                            2.0d0, 3.317d0)
+         if (freq .ge. 2.7254d15) x1100 = seaton(2.7254d15, 1.219d-17,
+     &                                           2.0d0, 3.317d0)
 
-         if (freq .ge. 2.4196d15) x1240 = seaton (2.4196d15, 1.03d-17,
-     &                                            1.5d0, 2.789d0)
+         if (freq .ge. 2.4196d15) x1240 = seaton(2.4196d15, 1.03d-17,
+     &                                           1.5d0, 2.789d0)
 
-         if (freq .ge. 2.0761d15) x1444 = seaton (2.0761d15, 9.59d-18,
-     &                                            1.5d0, 3.501d0)
+         if (freq .ge. 2.0761d15) x1444 = seaton(2.0761d15, 9.59d-18,
+     &                                           1.5d0, 3.501d0)
 
       endif
 
-      cx1100 = 9.0      * x1100
-      cx1240 = c1240(j) * x1240
-      cx1444 = c1444(j) * x1444
+      bcx1100 = bCI(1, j) * 9.0      * x1100
+      bcx1240 = bCI(2, j) * c1240(j) * x1240
+      bcx1444 = bCI(3, j) * c1444(j) * x1444
 
-      c1op = cx1100 * (bCI(j, 1) - bCII(j) * ehvkt(j)) +
-     $       cx1240 * (bCI(j, 2) - bCII(j) * ehvkt(j)) +
-     $       cx1444 * (bCI(j, 3) - bCII(j) * ehvkt(j))
+      c1op = bcx1100 * (1.0d0 - bCII(j) * ehvkt(j) / bCI(1, j)) +
+     $       bcx1240 * (1.0d0 - bCII(j) * ehvkt(j) / bCI(2, j)) +
+     $       bcx1444 * (1.0d0 - bCII(j) * ehvkt(j) / bCI(3, j))
 
       end
 
@@ -2363,11 +2367,11 @@
 
             do i = 1, 5
 
-               bolt(i, k) = bFeI(k, i) * g(i) * exp(-e(i) * 2.99792458d10 * hkt(k))
+               bolt(i, k) = bFeI(i, k) * g(i) * exp(-e(i) * 2.99792458d10 * hkt(k))
 
             end do
 
-            do i = 1, 48
+            do i = 6, 48
 
                bolt(i, k) = g(i) * exp(-e(i) * 2.99792458d10 * hkt(k))
 
@@ -2499,21 +2503,27 @@
          do while ( n .le. 7 .and. freq .le. freqmg(n))
             n = n + 1
          end do
-*
+
          d = (freqln - flog(n)) / (flog(n + 1) - flog(n))
          if (n .gt. 2) n = 2 * n - 2
          d1 = 1.0d0 - d
-*
+
          do it = 1, 7
             x(it) = peach(it, n + 1) * d + peach(it, n) * d1
          end do
-*
+
       end if
-*
+
       n     = nt(j)
-      mg1op = exp(x(n) * (1.0d0 - dt(j)) + x(n + 1) * dt(j))
+
+      mg1op = bMgI(1, j)                                             ! population part
+
+      mg1op = mg1op * exp(x(n) * (1.0d0 - dt(j)) + x(n + 1) * dt(j)) ! cross-section part
+
+      mg1op = mg1op * (1.0d0 - bMgII(j) * ehvkt(j) / bMgI(1, j))     ! stimulated emission part
 
       end
+
 *
 *************** E N D   O F   F U N C T I O N   M G 1 O P **************
 *
@@ -3328,7 +3338,7 @@
      &   55.922,52.141,49.577,47.715,46.295,45.172,44.259,43.500,42.858,  6491
      &   56.828,52.821,50.110,48.146,46.654,45.477,44.522,43.730,43.061,  6492
      &   56.657,52.653,49.944,47.983,46.491,45.315,44.360,43.569,42.901/  6900
-*
+
       data tlg / 8.29405, 8.51719, 8.69951, 8.85367, 8.98720, 9.10498,
      &           9.21034, 9.30565, 9.39266 /
 *
@@ -3337,15 +3347,15 @@
       if (itemp .ne. itemp1) then
          freq1  = 0.0d0
          itemp1 = itemp
-*
+
          do k = 1, nrhox
             n     = max(min(8, int(t(k) / 1000.0d0) -3) , 1)
             nt(k) = n
             dt(k) = (tlog(k) - tlg(n)) / (tlg(n + 1) - tlg(n))
          end do
-*
+
       end if
-*
+
       if (freq .ne. freq1) then
          freq1   = freq
          n       = 1
@@ -3355,19 +3365,25 @@
          do while (n .le. 9 .and. freq .le. freqsi(n))
             n = n + 1
          end do
-*
+
          d  = (freqln - flog(n)) / (flog(n + 1) - flog(n))
          d1 = 1.0 - d
          if (n .gt. 2) n = 2 * n - 2
-*
+
          do it = 1, 9
             x(it) = peach(it, n + 1) * d + peach(it, n) * d1
          end do
-*
+
       end if
-*
+
       n     = nt(j)
-      si1op = exp(-(x(n) * (1.0 - dt(j)) + x(n + 1) * dt(j))) * 9.0
+
+      si1op = 9.0d0 * bSiI(1, j)                                      ! population part
+
+      si1op = si1op * exp(-(x(n) * (1.0 - dt(j)) + x(n + 1) * dt(j))) ! cross-section part
+
+      si1op = si1op * (1.0d0 - bSiII(j) * ehvkt(j) / bSiI(1, j))      ! stimulated emission part
+
       end
 *
 *************** E N D   O F   F U N C T I O N   S I 1 O P **************
