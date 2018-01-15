@@ -33,7 +33,7 @@
 
       character (len = 150) :: line
 
-      logical :: nlte_on
+      logical :: some_elements_are_in_nlte, in_nlte
 
       un = 1532
 
@@ -73,52 +73,54 @@
       bFeI  = 1.0d0
       bFeII = 1.0d0
 
-      inquire(file = nlte_file, exist = nlte_on)
+      inquire(file = nlte_file, exist = some_elements_are_in_nlte)
 
-      if (nlte_on) then
+      if (some_elements_are_in_nlte) then
 
           open(unit = un, file = nlte_file, action = 'read')
 
           io = 0
 
-          do while (io .eq. 0)
+          do while (io == 0)
 
              read(un, '(A)', iostat = io) line
 
-             if (io .ne. 0) exit
+             if (io /= 0) exit
 
-             if (index(line, 'ELEMENT') .ne. 0) then
+             if (index(line, 'ELEMENT') /= 0) then
 
-                if (index(line, 'HYDROGEN') .ne. 0) nlte(1) =  .true.
-                if (index(line, 'HELIUM')   .ne. 0) nlte(2) =  .true.
-                if (index(line, 'LITHIU')   .ne. 0) nlte(3) =  .true.
-                if (index(line, 'BERRYL')   .ne. 0) nlte(4) =  .true.
-                if (index(line, 'BOR')      .ne. 0) nlte(5) =  .true.
-                if (index(line, 'CARBON')   .ne. 0) nlte(6) =  .true.
-                if (index(line, 'NITROG')   .ne. 0) nlte(7) =  .true.
-                if (index(line, 'OXYGEN')   .ne. 0) nlte(8) =  .true.
-                if (index(line, 'FLUOR')    .ne. 0) nlte(9) =  .true.
-                if (index(line, 'NEON')     .ne. 0) nlte(10) = .true.
-                if (index(line, 'NATRIUM')  .ne. 0) nlte(11) = .true.
-                if (index(line, 'MAGNES')   .ne. 0) nlte(12) = .true.
-                if (index(line, 'ALUMIN')   .ne. 0) nlte(13) = .true.
-                if (index(line, 'SILICON')  .ne. 0) nlte(14) = .true.
-                if (index(line, 'PHOSPH')   .ne. 0) nlte(15) = .true.
-                if (index(line, 'SULPHUR')  .ne. 0) nlte(16) = .true.
-                if (index(line, 'CHLOR')    .ne. 0) nlte(17) = .true.
-                if (index(line, 'ARGON')    .ne. 0) nlte(18) = .true.
-                if (index(line, 'POTASS')   .ne. 0) nlte(19) = .true.
-                if (index(line, 'CALCIUM')  .ne. 0) nlte(20) = .true.
-                if (index(line, 'SCANDI')   .ne. 0) nlte(21) = .true.
-                if (index(line, 'TITAN')    .ne. 0) nlte(22) = .true.
-                if (index(line, 'VANADI')   .ne. 0) nlte(23) = .true.
-                if (index(line, 'CHROM')    .ne. 0) nlte(24) = .true.
-                if (index(line, 'MANGAN')   .ne. 0) nlte(25) = .true.
-                if (index(line, 'IRON')     .ne. 0) nlte(26) = .true.
-                if (index(line, 'COBALT')   .ne. 0) nlte(27) = .true.
-                if (index(line, 'NICKEL')   .ne. 0) nlte(28) = .true.
-                if (index(line, 'COPPER')   .ne. 0) nlte(29) = .true.
-                if (index(line, 'ZINC')     .ne. 0) nlte(30) = .true.
+                in_nlte = index(line, 'NLTE') /= 0
+
+                if (index(line, 'HYDROGEN') /= 0 .and. in_nlte) nlte(1)  = .true.
+                if (index(line, 'HELIUM')   /= 0 .and. in_nlte) nlte(2)  = .true.
+                if (index(line, 'LITHIU')   /= 0 .and. in_nlte) nlte(3)  = .true.
+                if (index(line, 'BERRYL')   /= 0 .and. in_nlte) nlte(4)  = .true.
+                if (index(line, 'BOR')      /= 0 .and. in_nlte) nlte(5)  = .true.
+                if (index(line, 'CARBON')   /= 0 .and. in_nlte) nlte(6)  = .true.
+                if (index(line, 'NITROG')   /= 0 .and. in_nlte) nlte(7)  = .true.
+                if (index(line, 'OXYGEN')   /= 0 .and. in_nlte) nlte(8)  = .true.
+                if (index(line, 'FLUOR')    /= 0 .and. in_nlte) nlte(9)  = .true.
+                if (index(line, 'NEON')     /= 0 .and. in_nlte) nlte(10) = .true.
+                if (index(line, 'NATRIUM')  /= 0 .and. in_nlte) nlte(11) = .true.
+                if (index(line, 'MAGNES')   /= 0 .and. in_nlte) nlte(12) = .true.
+                if (index(line, 'ALUMIN')   /= 0 .and. in_nlte) nlte(13) = .true.
+                if (index(line, 'SILICON')  /= 0 .and. in_nlte) nlte(14) = .true.
+                if (index(line, 'PHOSPH')   /= 0 .and. in_nlte) nlte(15) = .true.
+                if (index(line, 'SULPHUR')  /= 0 .and. in_nlte) nlte(16) = .true.
+                if (index(line, 'CHLOR')    /= 0 .and. in_nlte) nlte(17) = .true.
+                if (index(line, 'ARGON')    /= 0 .and. in_nlte) nlte(18) = .true.
+                if (index(line, 'POTASS')   /= 0 .and. in_nlte) nlte(19) = .true.
+                if (index(line, 'CALCIUM')  /= 0 .and. in_nlte) nlte(20) = .true.
+                if (index(line, 'SCANDI')   /= 0 .and. in_nlte) nlte(21) = .true.
+                if (index(line, 'TITAN')    /= 0 .and. in_nlte) nlte(22) = .true.
+                if (index(line, 'VANADI')   /= 0 .and. in_nlte) nlte(23) = .true.
+                if (index(line, 'CHROM')    /= 0 .and. in_nlte) nlte(24) = .true.
+                if (index(line, 'MANGAN')   /= 0 .and. in_nlte) nlte(25) = .true.
+                if (index(line, 'IRON')     /= 0 .and. in_nlte) nlte(26) = .true.
+                if (index(line, 'COBALT')   /= 0 .and. in_nlte) nlte(27) = .true.
+                if (index(line, 'NICKEL')   /= 0 .and. in_nlte) nlte(28) = .true.
+                if (index(line, 'COPPER')   /= 0 .and. in_nlte) nlte(29) = .true.
+                if (index(line, 'ZINC')     /= 0 .and. in_nlte) nlte(30) = .true.
 
              endif
 
