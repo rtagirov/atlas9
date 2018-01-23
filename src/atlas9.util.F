@@ -76,7 +76,7 @@
 
       integer, optional :: s
 
-      integer :: getFileUnit
+      integer :: get_file_unit
 
       integer :: i, i0
 
@@ -100,9 +100,10 @@
 
       enddo
 
-      call error('util.F: function getFileUnit: no free unit found. abort.')
+      call error('atlas9.util.F: function getFileUnit: 
+     $            no free unit found. abort.')
 
-      end function getFileUnit
+      end function get_file_unit
       
       !*** Copy a file from FROMFILE to TOFILE using the opional OPTS
       !*** and set the returnstatus to the opional status
@@ -112,12 +113,19 @@
       integer,optional,intent(inout) :: status
       integer :: istat
       integer,external :: system
+
       istat = system('cp '//OPTS//' '//FROMFILE//' '//TOFILE)
+
       if(present(status)) then
+
         status=istat
+
       else
-        if(istat/=0)
-     &     print '("util.F: copy: Warning: system returned ", i0)',istat
+
+        if(istat /= 0)
+     &     print '("atlas9.util.F: copy: Warning:
+     $              system returned ", i0)', istat
+
       endif
 
       end subroutine

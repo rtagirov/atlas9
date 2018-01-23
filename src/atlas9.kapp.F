@@ -1579,6 +1579,8 @@
 *
       double precision function al1op(j)
 
+      use nlte_module
+
       implicit none
 *
 *.... CROSS-SECTION TIMES THE PARTITION FUNCTION
@@ -1605,9 +1607,9 @@
 
       end if
 
-      al1op = bAlI(j) * 6.0d0 * al1op                         ! population part
+      al1op = bAl(1, 1, j) * 6.0d0 * al1op                             ! population part
 
-      al1op = al1op * (1.0d0 - bAlII(j) * ehvkt(j) / bAlI(j)) ! stimulated emission part
+      al1op = al1op * (1.0d0 - bAl(2, 1, j) * ehvkt(j) / bAl(1, 1, j)) ! stimulated emission part
 
       end
 
@@ -1615,6 +1617,8 @@
 *************** E N D   O F   F U N C T I O N   A L 1 O P **************
 *
       double precision function c1op(j)
+
+      use nlte_module
 
       implicit none
 *
@@ -1635,7 +1639,11 @@
 *
       double precision  c1240(maxd), c1444(maxd), freq1, seaton, x1100,
      &                  x1240, x1444
+
       integer itemp1, k
+
+      real*8 :: bcx1100, bcx1240, bcx1444
+
 *
 *---------------------------- EXTERNAL ---------------------------------
 *
@@ -1681,13 +1689,13 @@
 
       endif
 
-      bcx1100 = bCI(1, j) * 9.0      * x1100
-      bcx1240 = bCI(2, j) * c1240(j) * x1240
-      bcx1444 = bCI(3, j) * c1444(j) * x1444
+      bcx1100 = bC(1, 1, j) * 9.0      * x1100
+      bcx1240 = bC(1, 2, j) * c1240(j) * x1240
+      bcx1444 = bC(1, 3, j) * c1444(j) * x1444
 
-      c1op = bcx1100 * (1.0d0 - bCII(j) * ehvkt(j) / bCI(1, j)) +
-     $       bcx1240 * (1.0d0 - bCII(j) * ehvkt(j) / bCI(2, j)) +
-     $       bcx1444 * (1.0d0 - bCII(j) * ehvkt(j) / bCI(3, j))
+      c1op = bcx1100 * (1.0d0 - bC(2, 1, j) * ehvkt(j) / bC(1, 1, j)) +
+     $       bcx1240 * (1.0d0 - bC(2, 1, j) * ehvkt(j) / bC(1, 2, j)) +
+     $       bcx1444 * (1.0d0 - bC(2, 1, j) * ehvkt(j) / bC(1, 3, j))
 
       end
 
@@ -2299,6 +2307,8 @@
 *
       double precision function fe1op(j)
 
+      use nlte_module
+
       implicit none
 *
 *.... CROSS-SECTION TIMES PARTITION FUNCTION
@@ -2319,7 +2329,13 @@
 *
       double precision  bolt(48, maxd), e(48), freq1, g(48), wno(48), 
      &                  xsect(48)
+
       integer i, itemp1, k
+
+      real*8, dimension(48) :: fe1st
+
+      real*8, parameter :: c = 2.99792458d10
+
       save bolt, e, freq1, g, itemp1, wno, xsect
 *
 *----------------------------- INITIALIZATION --------------------------
@@ -2365,15 +2381,9 @@
 
          do k = 1, nrhox
 
-            do i = 1, 5
+            do i = 1, 48
 
-               bolt(i, k) = bFeI(i, k) * g(i) * exp(-e(i) * 2.99792458d10 * hkt(k))
-
-            end do
-
-            do i = 6, 48
-
-               bolt(i, k) = g(i) * exp(-e(i) * 2.99792458d10 * hkt(k))
+              bolt(i, k) = bFe(1, i, k) * g(i) * exp(-e(i) * c * hkt(k))
 
             end do
 
@@ -2405,9 +2415,13 @@
 
       if (waveno .ge. 21000.0d0) then
 
+         fe1st = 1.0d0 - bFe(2, 1, j) * ehvkt(j) / bFe(1, :, j)
+
          do i = 1, 48
 
-            fe1op = fe1op + xsect(i) * bolt(i, j)
+            fe1op = fe1op + xsect(i) *
+     $                      bolt(i, j) *
+     $                      fe1st(i)
 
          end do
 
@@ -2419,6 +2433,8 @@
 *************** E N D   O F   F U N C T I O N   F E 1 O P **************
 *
       double precision function mg1op(j)
+
+      use nlte_module
 
       implicit none
 *
@@ -2483,6 +2499,7 @@
 *------------------------------- EXECUTION ----------------------------
 *
       if (itemp .ne. itemp1) then
+
          freq1  = 0.0d0
          itemp1 = itemp
 *
@@ -2516,18 +2533,19 @@
 
       n     = nt(j)
 
-      mg1op = bMgI(1, j)                                             ! population part
+      mg1op = bMg(1, 1, j)                                             ! population part
 
-      mg1op = mg1op * exp(x(n) * (1.0d0 - dt(j)) + x(n + 1) * dt(j)) ! cross-section part
+      mg1op = mg1op * exp(x(n) * (1.0d0 - dt(j)) + x(n + 1) * dt(j))   ! cross-section part
 
-      mg1op = mg1op * (1.0d0 - bMgII(j) * ehvkt(j) / bMgI(1, j))     ! stimulated emission part
+      mg1op = mg1op * (1.0d0 - bMg(2, 1, j) * ehvkt(j) / bMg(1, 1, j)) ! stimulated emission part
 
       end
 
 *
 *************** E N D   O F   F U N C T I O N   M G 1 O P **************
 *
-      double precision function ohop (j)
+      double precision function ohop(j)
+
       implicit none
 *
 *.... CROSS-SECTION TIMES PARTITION FUNCTION
@@ -3277,6 +3295,8 @@
 *
       double precision function si1op(j)
 
+      use nlte_module
+
       implicit none
 *
 *.... CROSS-SECTION TIMES THE PARTITION FUNCTION
@@ -3345,6 +3365,7 @@
 *------------------------------- EXECUTION ----------------------------
 *
       if (itemp .ne. itemp1) then
+
          freq1  = 0.0d0
          itemp1 = itemp
 
@@ -3357,6 +3378,7 @@
       end if
 
       if (freq .ne. freq1) then
+
          freq1   = freq
          n       = 1
 *
@@ -3378,11 +3400,11 @@
 
       n     = nt(j)
 
-      si1op = 9.0d0 * bSiI(1, j)                                      ! population part
+      si1op = 9.0d0 * bSi(1, 1, j)                                     ! population part
 
-      si1op = si1op * exp(-(x(n) * (1.0 - dt(j)) + x(n + 1) * dt(j))) ! cross-section part
+      si1op = si1op * exp(-(x(n) * (1.0 - dt(j)) + x(n + 1) * dt(j)))  ! cross-section part
 
-      si1op = si1op * (1.0d0 - bSiII(j) * ehvkt(j) / bSiI(1, j))      ! stimulated emission part
+      si1op = si1op * (1.0d0 - bSi(2, 1, j) * ehvkt(j) / bSi(1, 1, j)) ! stimulated emission part
 
       end
 *

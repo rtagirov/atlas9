@@ -60,7 +60,7 @@
 
       include 'common.sizebl'
       include 'common.constb'
-*
+
       include 'common.abross'
       include 'common.abtotb'
       include 'common.contbl'

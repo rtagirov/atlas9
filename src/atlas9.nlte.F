@@ -2,7 +2,7 @@
 
       implicit none
 
-      character (len = 2), dimension(30) :: symbol
+      character (len = 2), dimension(30) :: sym
 
       character (len = 4), parameter, dimension(10) :: stage = ['I',
      $                                                          'II',
@@ -43,9 +43,9 @@
 
       integer                   :: un, io, k
 
-      character (len = 150)     :: line
+      character (len = 150)     :: l
 
-      logical                   :: some_elements_are_in_nlte, in_nlte
+      logical                   :: some_elements_are_in_nlte, innlte
 
       nlte(1 : 30) = .false.
 
@@ -53,7 +53,7 @@
 
       open(unit = un, file = 'istageinfo.inp', action = 'read')
 
-      read(un, '(A2,4(2x,i2))') (symbol(k),
+      read(un, '(A2,4(2x,i2))') (sym(k),
      $                           nis(k),
      $                           nl(k, 1),
      $                           nl(k, 2),
@@ -71,6 +71,7 @@
       allocate(bAl(maxval(nis), maxval(nl(13, :)), nrhox))
       allocate(bSi(maxval(nis), maxval(nl(14, :)), nrhox))
       allocate(bFe(maxval(nis), 48,                nrhox))
+!      allocate(bFe(maxval(nis), maxval(nl(26, :)), nrhox))
 
       dep =  1.0d0
 
@@ -94,44 +95,44 @@
 
           do while (io == 0)
 
-             read(un, '(A)', iostat = io) line
+             read(un, '(A)', iostat = io) l
 
              if (io /= 0) exit
 
-             if (index(line, 'ELEMENT') /= 0) then
+             if (index(l, 'ELEMENT') /= 0) then
 
-                in_nlte = index(line, 'NLTE') /= 0
+                innlte = index(l, 'NLTE') /= 0
 
-                if (index(line, 'HYDROGEN') /= 0 .and. in_nlte) nlte(1)  = .true.
-                if (index(line, 'HELIUM')   /= 0 .and. in_nlte) nlte(2)  = .true.
-                if (index(line, 'LITHIU')   /= 0 .and. in_nlte) nlte(3)  = .true.
-                if (index(line, 'BERRYL')   /= 0 .and. in_nlte) nlte(4)  = .true.
-                if (index(line, 'BOR')      /= 0 .and. in_nlte) nlte(5)  = .true.
-                if (index(line, 'CARBON')   /= 0 .and. in_nlte) nlte(6)  = .true.
-                if (index(line, 'NITROG')   /= 0 .and. in_nlte) nlte(7)  = .true.
-                if (index(line, 'OXYGEN')   /= 0 .and. in_nlte) nlte(8)  = .true.
-                if (index(line, 'FLUOR')    /= 0 .and. in_nlte) nlte(9)  = .true.
-                if (index(line, 'NEON')     /= 0 .and. in_nlte) nlte(10) = .true.
-                if (index(line, 'NATRIUM')  /= 0 .and. in_nlte) nlte(11) = .true.
-                if (index(line, 'MAGNES')   /= 0 .and. in_nlte) nlte(12) = .true.
-                if (index(line, 'ALUMIN')   /= 0 .and. in_nlte) nlte(13) = .true.
-                if (index(line, 'SILICON')  /= 0 .and. in_nlte) nlte(14) = .true.
-                if (index(line, 'PHOSPH')   /= 0 .and. in_nlte) nlte(15) = .true.
-                if (index(line, 'SULPHUR')  /= 0 .and. in_nlte) nlte(16) = .true.
-                if (index(line, 'CHLOR')    /= 0 .and. in_nlte) nlte(17) = .true.
-                if (index(line, 'ARGON')    /= 0 .and. in_nlte) nlte(18) = .true.
-                if (index(line, 'POTASS')   /= 0 .and. in_nlte) nlte(19) = .true.
-                if (index(line, 'CALCIUM')  /= 0 .and. in_nlte) nlte(20) = .true.
-                if (index(line, 'SCANDI')   /= 0 .and. in_nlte) nlte(21) = .true.
-                if (index(line, 'TITAN')    /= 0 .and. in_nlte) nlte(22) = .true.
-                if (index(line, 'VANADI')   /= 0 .and. in_nlte) nlte(23) = .true.
-                if (index(line, 'CHROM')    /= 0 .and. in_nlte) nlte(24) = .true.
-                if (index(line, 'MANGAN')   /= 0 .and. in_nlte) nlte(25) = .true.
-                if (index(line, 'IRON')     /= 0 .and. in_nlte) nlte(26) = .true.
-                if (index(line, 'COBALT')   /= 0 .and. in_nlte) nlte(27) = .true.
-                if (index(line, 'NICKEL')   /= 0 .and. in_nlte) nlte(28) = .true.
-                if (index(line, 'COPPER')   /= 0 .and. in_nlte) nlte(29) = .true.
-                if (index(line, 'ZINC')     /= 0 .and. in_nlte) nlte(30) = .true.
+                if (index(l,'HYDROGEN') /= 0.and.innlte) nlte(1) =.true.
+                if (index(l,'HELIUM')   /= 0.and.innlte) nlte(2) =.true.
+                if (index(l,'LITHIU')   /= 0.and.innlte) nlte(3) =.true.
+                if (index(l,'BERRYL')   /= 0.and.innlte) nlte(4) =.true.
+                if (index(l,'BOR')      /= 0.and.innlte) nlte(5) =.true.
+                if (index(l,'CARBON')   /= 0.and.innlte) nlte(6) =.true.
+                if (index(l,'NITROG')   /= 0.and.innlte) nlte(7) =.true.
+                if (index(l,'OXYGEN')   /= 0.and.innlte) nlte(8) =.true.
+                if (index(l,'FLUOR')    /= 0.and.innlte) nlte(9) =.true.
+                if (index(l,'NEON')     /= 0.and.innlte) nlte(10)=.true.
+                if (index(l,'NATRIUM')  /= 0.and.innlte) nlte(11)=.true.
+                if (index(l,'MAGNES')   /= 0.and.innlte) nlte(12)=.true.
+                if (index(l,'ALUMIN')   /= 0.and.innlte) nlte(13)=.true.
+                if (index(l,'SILICON')  /= 0.and.innlte) nlte(14)=.true.
+                if (index(l,'PHOSPH')   /= 0.and.innlte) nlte(15)=.true.
+                if (index(l,'SULPHUR')  /= 0.and.innlte) nlte(16)=.true.
+                if (index(l,'CHLOR')    /= 0.and.innlte) nlte(17)=.true.
+                if (index(l,'ARGON')    /= 0.and.innlte) nlte(18)=.true.
+                if (index(l,'POTASS')   /= 0.and.innlte) nlte(19)=.true.
+                if (index(l,'CALCIUM')  /= 0.and.innlte) nlte(20)=.true.
+                if (index(l,'SCANDI')   /= 0.and.innlte) nlte(21)=.true.
+                if (index(l,'TITAN')    /= 0.and.innlte) nlte(22)=.true.
+                if (index(l,'VANADI')   /= 0.and.innlte) nlte(23)=.true.
+                if (index(l,'CHROM')    /= 0.and.innlte) nlte(24)=.true.
+                if (index(l,'MANGAN')   /= 0.and.innlte) nlte(25)=.true.
+                if (index(l,'IRON')     /= 0.and.innlte) nlte(26)=.true.
+                if (index(l,'COBALT')   /= 0.and.innlte) nlte(27)=.true.
+                if (index(l,'NICKEL')   /= 0.and.innlte) nlte(28)=.true.
+                if (index(l,'COPPER')   /= 0.and.innlte) nlte(29)=.true.
+                if (index(l,'ZINC')     /= 0.and.innlte) nlte(30)=.true.
 
              endif
 
@@ -147,6 +148,9 @@
 
       subroutine nlte_depart(nrhox)
 
+      use string_operations
+
+      include 'common.sizebl'
       include 'common.stateb'
       include 'common.depart'
 
@@ -154,7 +158,7 @@
 
       real*8, dimension(nrhox) :: val
 
-      character (len = *) ;: lev
+      character (len = 50) :: lev
 
       integer :: k, i, l
 
@@ -166,17 +170,19 @@
 
       do k = 1, 30
 
+         sym(k) = trim(adjustl(sym(k)))
+
          if (.not. nlte(k)) cycle
 
          do i = 1, nis(k)
 
             do l = 1, nl(k, i)
 
-               lev = symbol(k)//stage(i)//str(l)
+               lev = sym(k)//stage(i)//str(l)
 
-               if (k == 1 .and. i == 1) lev = 'HMINUS'
-               if (k == 1 .and. i == 2) lev = symbol(k)//stage(i - 1)//str(l)
-               if (k == 1 .and. i == 3) lev = 'HII'
+               if (k == 1.and.i == 1) lev = 'HMINUS'
+               if (k == 1.and.i == 2) lev = sym(k)//stage(i - 1)//str(l)
+               if (k == 1.and.i == 3) lev = 'HII'
 
                call read_nlte_lev(nrhox, lev, 'dep', val)
 
@@ -224,7 +230,15 @@
 
 !                   IRON
 
+!     first several levels of neutral iron (calculated in the NESSY part)
       bFe(1, 1 : nl(26, 1), :) = dep(26, 1, 1 : nl(26, 1), :)
+      
+!     remaining 43 levels of neutral iron (connection to the last neutral NLTE level)
+!      forall(l = nl(26, 1) + 1 : 48) bFe(1, l, :) = bFe(1, nl(26, 1), :)
+
+!     remaining 43 levels of neutral iron (connection to the first neutral NLTE level)
+      forall(l = nl(26, 1) + 1 : 48) bFe(1, l, :) = bFe(1, 1, :)
+
       bFe(2, 1 : nl(26, 2), :) = dep(26, 2, 1 : nl(26, 2), :)
 
       end subroutine nlte_depart
