@@ -2,19 +2,18 @@
 
       implicit none
 
-      character (len = 2), dimension(30) :: sym
+!      character (len = 2), dimension(30) :: sym
 
-      character (len = 4), parameter, dimension(10) :: stage = ['I',
-     $                                                          'II',
-     $                                                          'III',
-     $                                                          'IV',
-     $                                                          'V',
-     $                                                          'VI',
-     $                                                          'VII',
-     $                                                          'VIII',
-     $                                                          'IX',
-     $                                                          'X']
-     $ 
+!      character (len = 4), dimension(10) :: stage = ['I',
+!     $                                               'II',
+!     $                                               'III',
+!     $                                               'IV',
+!     $                                               'V',
+!     $                                               'VI',
+!     $                                               'VII',
+!     $                                               'VIII',
+!     $                                               'IX',
+!     $                                               'X']
 
       logical, dimension(30) ::    nlte
 
@@ -45,6 +44,8 @@
 
       character (len = 150)     :: l
 
+      character (len = 2)       :: sym
+
       logical                   :: some_elements_are_in_nlte, innlte
 
       nlte(1 : 30) = .false.
@@ -53,12 +54,12 @@
 
       open(unit = un, file = 'istageinfo.inp', action = 'read')
 
-      read(un, '(A2,4(2x,i2))') (sym(k),
-     $                           nis(k),
-     $                           nl(k, 1),
-     $                           nl(k, 2),
-     $                           nl(k, 3),
-     $                           k = 1, 30)
+      read(un, *) (sym,
+     $             nis(k),
+     $             nl(k, 1),
+     $             nl(k, 2),
+     $             nl(k, 3),
+     $             k = 1, 30)
 
       close(un)
 
@@ -148,6 +149,7 @@
 
       subroutine nlte_depart(nrhox)
 
+      use utils
       use string_operations
 
       include 'common.sizebl'
@@ -158,7 +160,9 @@
 
       real*8, dimension(nrhox) :: val
 
-      character (len = 50) :: lev
+      character(:), allocatable :: lev, stage, sym
+
+!      character(:), allocatable :: stage
 
       integer :: k, i, l
 
@@ -170,18 +174,74 @@
 
       do k = 1, 30
 
-         sym(k) = trim(adjustl(sym(k)))
-
          if (.not. nlte(k)) cycle
+
+         selectcase (k)
+
+             case(1);  sym = 'H'
+             case(2);  sym = 'HE'
+             case(3);  sym = 'Li'
+             case(4);  sym = 'Be'
+             case(5);  sym = 'B'
+             case(6);  sym = 'C'
+             case(7);  sym = 'N'
+             case(8);  sym = 'O'
+             case(9);  sym = 'F'
+             case(10); sym = 'Ne'
+             case(11); sym = 'Na'
+             case(12); sym = 'Mg'
+             case(13); sym = 'Al'
+             case(14); sym = 'Si'
+             case(15); sym = 'P'
+             case(16); sym = 'S'
+             case(17); sym = 'Cl'
+             case(18); sym = 'Ar'
+             case(19); sym = 'K'
+             case(20); sym = 'Ca'
+             case(21); sym = 'Sc'
+             case(22); sym = 'Ti'
+             case(23); sym = 'V'
+             case(24); sym = 'Cr'
+             case(25); sym = 'Mn'
+             case(26); sym = 'Fe'
+             case(27); sym = 'Co'
+             case(28); sym = 'Ni'
+             case(29); sym = 'Cu'
+             case(30); sym = 'Zn'
+
+             case default; call error('atlas9.nlte.F: subroutine nlte_depart:
+     $ Unknown atomic number. Abort.')
+
+         endselect
 
          do i = 1, nis(k)
 
+!            stage(i) = trim(adjustl(stage(i)))
+!            stage(i) = rm_char(stage(i), ' ')
+
+            selectcase (i)
+
+                case(1); stage = 'I'
+                case(2); stage = 'II'
+                case(3); stage = 'III'
+                case(4); stage = 'IV'
+                case(5); stage = 'V'
+                case(6); stage = 'VI'
+                case(7); stage = 'VII'
+                case(8); stage = 'VIII'
+                case(9); stage = 'IX'
+
+                case default; call error('atlas9.nlte.F: subroutine nlte_depart:
+     $ increase select case range for stage. Abort.')
+
+            endselect
+
             do l = 1, nl(k, i)
 
-               lev = sym(k)//stage(i)//str(l)
+               lev = sym//stage//str(l)
 
                if (k == 1.and.i == 1) lev = 'HMINUS'
-               if (k == 1.and.i == 2) lev = sym(k)//stage(i - 1)//str(l)
+               if (k == 1.and.i == 2) lev = sym//'I'//str(l)
                if (k == 1.and.i == 3) lev = 'HII'
 
                call read_nlte_lev(nrhox, lev, 'dep', val)
@@ -269,7 +329,7 @@
 
       un = 1845
 
-      open(unit = un, file = 'nltepop/'//levname, action = 'read')
+      open(unit = un, file = 'LEV/'//levname, action = 'read')
 
       read(un, *) s
 

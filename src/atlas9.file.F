@@ -2,13 +2,13 @@
 
       implicit none
 
-      character (len=9), parameter :: atm_mod_file = 'atmod.inp'
+      character (len=7), parameter :: atm_mod_file = 'atm.inp'
 
-      character (len=8), parameter :: nlte_file = 'DATOM_NLTE'
+      character (len=9), parameter :: nlte_file    = 'datom.inp'
 
-      character (len=8), parameter :: spec_file = 'spec.out'
+      character (len=8), parameter :: spec_file    = 'spec.out'
 
-      character (len=9), parameter :: print_file = 'print.out'
+      character (len=9), parameter :: print_file   = 'print.out'
 
       public
 

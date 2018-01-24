@@ -100,7 +100,7 @@
 
       enddo
 
-      call error('atlas9.util.F: function getFileUnit: 
+      call error('atlas9.util.F: function get_file_unit:
      $            no free unit found. abort.')
 
       end function get_file_unit
