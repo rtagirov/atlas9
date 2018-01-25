@@ -1,4 +1,7 @@
       subroutine kapp
+
+      use nlte_module
+
       implicit none
 *
 *.... 1985 APR - MODIFIED TO INCLUDE A NEW HLINOP AND TO REORGANIZE
@@ -88,19 +91,25 @@
 
       do j = 1, nrhox
 
-         a         = ah2p(j) + ahe1(j) + ahe2(j) + ahemin(j) +
-     &               acool(j) + aluke(j) + ahot(j)
+         a = ah2p(j) +
+     $       ahe1(j) +
+     $       ahe2(j) +
+     $       ahemin(j) +
+     &       acool_mol(j) +
+     $       aluke(j) +
+     $       ahot(j)
 
-         acont(j)  = a + ahyd(j) + ahmin(j) + axcont(j)
+         acont(j) = a + ahyd(j) + ahmin(j) + axcont(j) + acool_ato(j)
 
-         scont(j)  = bnu(j)
+         scont(j) = bnu(j)
 
-         if (acont(j) .gt. 0.0d0) scont(j) =
-     &               (a * bnu(j) + ahyd(j) * shyd(j) +
-     &                ahmin(j)* shmin(j) + axcont(j) * sxcont(j)) /
-     &                acont(j)
+         if (acont(j) .gt. 0.0d0) scont(j) = (a         * bnu(j) +
+                                              ahyd(j)   * shyd(j) +
+     &                                        ahmin(j)  * shmin(j) +
+                                              axcont(j) * sxcont(j)) /
+     &                                        acont(j)
 
-         sigmac(j) = sigh(j) + sighe(j) + sigel(j) + sigh2(j) +sigx(j)
+         sigmac(j) = sigh(j) + sighe(j) + sigel(j) + sigh2(j) + sigx(j)
 
       enddo
 
@@ -1532,6 +1541,8 @@
 *
       subroutine coolop
 
+      use nlte_module
+
       implicit none
 *
 *.... SI1, MG1, AL1, C1, FE1, OH, CH
@@ -1548,161 +1559,200 @@
 *
 *---------------------------- LOCAL VARIABLES  ------------------------
 *
-      double precision  al1op, c1op, chop, fe1op, mg1op, ohop, si1op
-      integer j
+      real*8 :: chop, ohop
+
+      integer :: j
 *
 *-------------------------------- EXTERNALS ---------------------------
 *
-      external al1op, c1op, chop, fe1op, mg1op, ohop, si1op
+!      external al1op, c1op, chop, fe1op, mg1op, ohop, si1op
+      external chop, ohop
 *
 *------------------------------- EXECUTION ----------------------------
 *
       do j = 1, nrhox
 
-         acool(j) = (chop(j)  * xnfpch(j)  +
-     &               ohop(j)  * xnfpoh(j)) * stim(j) +
-!    stimulated emission for CI, MgI, AlI, SiI and FeI is accounted for in the corresponding subroutines
-     $               al1op(j) * xnfpal(j, 1) +
-     &               mg1op(j) * xnfpmg(j, 1) +
-     &               si1op(j) * xnfpsi(j, 1) +
-     $               c1op(j)  * xnfpc (j, 1) +
-     $               fe1op(j) * xnfpfe(j, 1)
+         acool_mol(j) = (chop(j) * xnfpch(j)  +
+     &                   ohop(j) * xnfpoh(j)) * stim(j)
 
       end do
 
-      acool(1 : nrhox) = acool(1 : nrhox) / rho(1 : nrhox)
+      call al1
+      call mg1
+      call si1
+      call c1 
+      call fe1
+
+      acool_ato = al1op + mg1op + si1op + c1op + fe1op
+
+      acool_mol( = acool_mol / rho(1 : nrhox)
+      acool_ato( = acool_ato / rho(1 : nrhox)
 
       end
 
 *
 *********** E N D   O F   S U B R O U T I N E   C O O L O P ************
 *
-      double precision function al1op(j)
+
+      subroutine al1
 
       use nlte_module
 
       implicit none
-*
+
 *.... CROSS-SECTION TIMES THE PARTITION FUNCTION
-*
-*--------------------------------- DUMMY VARIABLE ----------------------
-*.... NOT USED BUT NEEDED TO KEEP THE COMPILER HAPPY
-*
-      integer j
-*
+
+*--------------------------------- LOCAL VARIABLES ----------------------
+
+      integer :: j
+
+      real*8 :: cs, stim_nlte, ltepop, al1op_lte, al1em
+
 *------------------------------- COMMON --------------------------------
-*
+
       include 'common.sizebl'
       include 'common.freqbl'
-*
+      include 'common.xnfpbl'
+
 *------------------------------- EXECUTION -----------------------------
-*
-      if (freq .ge. 1.443d15) then
 
-         al1op = 6.5d-17 * (1.443d15 / freq) ** 5             ! cross-section part
+      cs = 0.0d0
 
-      else
+!     cross-section
+      if (freq .ge. 1.443d15) cs = 6.5d-17 * (1.443d15 / freq)**5
 
-         al1op = 0.0d0
+      do j = 1, nrhox
 
-      end if
+!         probability (6.0) * state population (cm^-3) / partition function (xnfpal(j, 1))
+          ltepop = 6.0d0 * xnfpal(j, 1) ! statistical weight of the level in question is 6 (see datom.inp)
 
-      al1op = bAl(1, 1, j) * 6.0d0 * al1op                             ! population part
+!         LTE opacity
+          al1op_lte =  ltepop * cs * stim(j)
 
-      al1op = al1op * (1.0d0 - bAl(2, 1, j) * ehvkt(j) / bAl(1, 1, j)) ! stimulated emission part
+!         stimulated emission factor in NLTE case
+          stim_nlte = 1.0d0 - bAl(2, 1, j) * ehvkt(j) / bAl(1, 1, j)
 
-      end
+!         NLTE opacity
+          al1op(j) = bAl(1, 1, j) * ltepop * cs * stim_nlte
 
-*
-*************** E N D   O F   F U N C T I O N   A L 1 O P **************
-*
-      double precision function c1op(j)
+!         NLTE emissivity
+          al1em = bAl(2, 1, j) * al1op_lte * bnu(j)
+
+!         source function
+          sal1(j) = al1em / al1op(j)
+
+      enddo
+
+      end subroutine al1
+
+
+      subroutine c1
 
       use nlte_module
 
       implicit none
-*
+
 *.... CROSS-SECTION TIMES THE PARTITION FUNCTION
-*
-*---------------------------- DUMMY VARIABLES --------------------------
-*
-      integer j
-*
+
 *-------------------------------- COMMONS -----------------------------
-*
+
       include 'common.sizebl'
       include 'common.freqbl'
       include 'common.rhoxbl'
       include 'common.tempbl'
-*
+      include 'common.xnfpbl'
+
 *---------------------------- LOCAL VARIABLES  ------------------------
-*
-      double precision  c1240(maxd), c1444(maxd), freq1, seaton, x1100,
-     &                  x1240, x1444
 
-      integer itemp1, k
+      real*8, dimension(3, nrhox) :: ltepop
 
-      real*8 :: bcx1100, bcx1240, bcx1444
+      real*8, dimension(nrhox)    :: xnfp, kT
 
-*
+      real*8, dimension(3)        :: cs, stim_nlte
+
+      real*8                      :: c1op_lte, c1em
+
+      real*8 ::  freq1, seaton
+
+      integer :: itemp1, j
+
 *---------------------------- EXTERNAL ---------------------------------
-*
+
       external seaton
-*
+
 *------------------------------ INITIALIZATION ------------------------
-*
-      save c1240, c1444, freq1, itemp1, x1100, x1240, x1444
+
+      save lp, cs, freq1, itemp1
+
       data freq1, itemp1 / 0.0d0, 0 /
-*
+
 *------------------------------- EXECUTION ----------------------------
-*
-      if (itemp .ne. itemp1) then
 
-         itemp1 = itemp
-
-         do k = 1, nrhox
-
-            c1240(k) = 5.0 * exp(-1.264 / tkev(k))
-
-            c1444(k) = exp(-2.683 / tkev(k))
-
-         end do
-
-      end if
-
+!     cross-sections
       if (freq .ne. freq1) then
 
          freq1 = freq
 
-         x1100 = 0.0d0
-         x1240 = 0.0d0
-         x1444 = 0.0d0
+         cs = 0.0d0
 
-         if (freq .ge. 2.7254d15) x1100 = seaton(2.7254d15, 1.219d-17,
+         if (freq .ge. 2.7254d15) cs(1) = seaton(2.7254d15, 1.219d-17,
      &                                           2.0d0, 3.317d0)
 
-         if (freq .ge. 2.4196d15) x1240 = seaton(2.4196d15, 1.03d-17,
+         if (freq .ge. 2.4196d15) cs(2) = seaton(2.4196d15, 1.03d-17,
      &                                           1.5d0, 2.789d0)
 
-         if (freq .ge. 2.0761d15) x1444 = seaton(2.0761d15, 9.59d-18,
+         if (freq .ge. 2.0761d15) cs(3) = seaton(2.0761d15, 9.59d-18,
      &                                           1.5d0, 3.501d0)
 
       endif
 
-      bcx1100 = bC(1, 1, j) * 9.0      * x1100
-      bcx1240 = bC(1, 2, j) * c1240(j) * x1240
-      bcx1444 = bC(1, 3, j) * c1444(j) * x1444
+      if (itemp .ne. itemp1) then
 
-      c1op = bcx1100 * (1.0d0 - bC(2, 1, j) * ehvkt(j) / bC(1, 1, j)) +
-     $       bcx1240 * (1.0d0 - bC(2, 1, j) * ehvkt(j) / bC(1, 2, j)) +
-     $       bcx1444 * (1.0d0 - bC(2, 1, j) * ehvkt(j) / bC(1, 3, j))
+         itemp1 = itemp
+
+         ltepop = 0.0d0
+
+         xnfp = xnfpc(1 : nrhox, 1)
+
+         kT = tkev(1 : nrhox)
+
+!        LTE populations (first three multiplets of CI)
+!        probability (9/5/1 * exp(...)) * state population (cm^-3) / partition function (xnfp)
+         ltepop(1, :) = 9.0d0 * xnfp
+
+         ltepop(2, :) = 5.0d0 * exp(-1.264 / kT) * xnfp
+
+         ltepop(3, :) = exp(-2.683 / kT) * xnfp
+
+      end if
+
+      do j = 1, nrhox
+
+!        LTE opacity
+         c1op_lte = sum(ltepop(:, j) * cs) * stim(j)
+
+!        stimulated emission factor in NLTE case
+         stim_nlte = 1.0d0 - bC(2, 1, j) * ehvkt(j) / bC(1, 1 : 3, j)
+
+!        NLTE opacity
+         c1op(j) = sum(bC(1, 1 : 3, j) * ltepop(:, j) * cs * stim_nlte)
+
+!        NLTE emissivity
+         c1em = bC(2, 1, j) * c1op_lte * bnu(j)
+
+!        source function
+         sc1(j) = c1em / c1op(j)
+
+      enddo
 
       end
 
 *
 *************** E N D   O F   F U N C T I O N   C 1 O P ****************
 *
+
       double precision function chop(j)
+
       implicit none
 *
 *.... CROSS-SECTION TIMES PARTITION FUNCTION
@@ -2324,9 +2374,12 @@
       include 'common.rhoxbl'
       include 'common.tempbl'
       include 'common.stateb'
+      include 'common.xnfpbl'
+
 *
 *----------------------------- LOCAL VARIABLES -------------------------
 *
+
       double precision  bolt(48, maxd), e(48), freq1, g(48), wno(48), 
      &                  xsect(48)
 
@@ -2383,7 +2436,9 @@
 
             do i = 1, 48
 
-              bolt(i, k) = bFe(1, i, k) * g(i) * exp(-e(i) * c * hkt(k))
+!             population
+              bolt(i, k) = bFe(1, i, k) * ! NLTE departure
+     $                     g(i) * exp(-e(i) * c * hkt(k)) * xnfpfe(k, 1) ! LTE population
 
             end do
 
@@ -2419,9 +2474,9 @@
 
          do i = 1, 48
 
-            fe1op = fe1op + xsect(i) *
-     $                      bolt(i, j) *
-     $                      fe1st(i)
+            fe1op = fe1op + xsect(i) *   ! cross-section part
+     $                      bolt(i, j) * ! population part
+     $                      fe1st(i)     ! stimulated emission part
 
          end do
 
@@ -2429,10 +2484,8 @@
 
       end
 
-*
-*************** E N D   O F   F U N C T I O N   F E 1 O P **************
-*
-      double precision function mg1op(j)
+
+      subroutine mg1
 
       use nlte_module
 
@@ -2440,41 +2493,43 @@
 *
 *.... CROSS-SECTION TIMES THE PARTITION FUNCTION
 *
+
 *.... 1995 OCT - TEST n .le. 7 BEFORE freq .le. freqmg TO AVOID AN ARRAY
 *                OUT OF BOUNDS
-*
-*---------------------------- DUMMY VARIABLES --------------------------
-*
-      integer j
-*
+
 *-------------------------------- COMMONS -----------------------------
-*
+
       include 'common.sizebl'
       include 'common.freqbl'
       include 'common.rhoxbl'
       include 'common.tempbl'
-*
+      include 'common.xnfpbl'
+
 *---------------------------- LOCAL VARIABLES  ------------------------
-*
+
       double precision   d, d1, dt(maxd), flog(9), freq1, freqmg(7), 
      &                   peach(7, 15), tlg(7), x(7)
 
       integer  it, itemp1, k, n, nt(maxd)
       save     dt, flog, freq1, freqmg, itemp1, nt, peach, tlg, x
-*
+
+      integer :: j
+
+      real*8 :: cs, stim_nlte, ltepop, mg1op_lte, mg1em
+
 *------------------------------ INITIALIZATION ------------------------
-*
+
       data freq1, itemp1 / 0.0d0,  0 /
-*
+
 *.... IN THE ORDER 4000 K, 5000 K, 6000 K, 7000 K, 8000 K, 9000 K, 10000 K
-*
+
       data flog / 35.23123, 35.19844, 35.15334, 34.71490, 34.31318, 
      &            33.75728, 33.65788, 33.64994, 33.43947 /
-*
+
       data freqmg / 1.9341452d15, 1.8488510d15, 1.1925797d15,
      &              7.9804046d14, 4.5772110d14, 4.1440977d14,
      &              4.1113514d14 /
-*
+
       data peach /
 *          4000     5000     6000     7000     8000     9000    10000   WAVE(A)
      &   -42.474, -42.350, -42.109, -41.795, -41.467, -41.159, -40.883,  1500
@@ -2492,31 +2547,31 @@
      &   -52.363, -48.856, -46.493, -44.786, -43.489, -42.467, -41.639,  7291
      &   -54.704, -50.772, -48.107, -46.176, -44.707, -43.549, -42.611,  7292
      &   -54.359, -50.349, -47.643, -45.685, -44.198, -43.027, -42.418 / 9000
-*
+
       data tlg / 8.29405, 8.51719, 8.69951, 8.85367, 8.98720, 9.10498,
      &           9.21034 /
-*
+
 *------------------------------- EXECUTION ----------------------------
-*
+
       if (itemp .ne. itemp1) then
 
          freq1  = 0.0d0
          itemp1 = itemp
-*
+
          do k = 1, nrhox
             n     = max( min(6, int(t(k) / 1000.0d0) -3) , 1)
             nt(k) = n
             dt(k) = (tlog(k) - tlg(n)) / (tlg(n + 1) - tlg(n))
          end do
-*
+
       end if
-*
+
       if (freq .ne. freq1) then
          freq1   = freq
          n       = 1
-*
+
 *.... THIS LOOP RETURNS N <= 8
-*
+
          do while ( n .le. 7 .and. freq .le. freqmg(n))
             n = n + 1
          end do
@@ -2531,19 +2586,36 @@
 
       end if
 
-      n     = nt(j)
+      do j = 1, nrhox
 
-      mg1op = bMg(1, 1, j)                                             ! population part
+          n  = nt(j)
 
-      mg1op = mg1op * exp(x(n) * (1.0d0 - dt(j)) + x(n + 1) * dt(j))   ! cross-section part
+!         cross-section
+          cs = exp(x(n) * (1.0d0 - dt(j)) + x(n + 1) * dt(j))
 
-      mg1op = mg1op * (1.0d0 - bMg(2, 1, j) * ehvkt(j) / bMg(1, 1, j)) ! stimulated emission part
+!         probability (1.0) * state population (cm^-3) / partition function (xnfpmg(j, 1))
+          ltepop = xnfpmg(j, 1) ! statistical weight of the level in question is 1 (see datom.inp)
 
-      end
+!         LTE opacity
+          mg1op_lte = ltepop * cs * stim(j)
 
-*
-*************** E N D   O F   F U N C T I O N   M G 1 O P **************
-*
+!         stimulated emission factor in NLTE case
+          stim_nlte = 1.0d0 - bMg(2, 1, j) * ehvkt(j) / bMg(1, 1, j)
+
+!         NLTE opacity
+          mg1op(j) = bMg(1, 1, j) * ltepop * cs * stim_nlte
+
+!         NLTE emissivity
+          mg1em = bMg(2, 1, j) * mg1op_lte * bnu(j)
+
+!         source function
+          smg1(j) = mg1em / mg1op(j)
+
+      enddo
+
+      end subroutine mg1
+
+
       double precision function ohop(j)
 
       implicit none
@@ -3293,7 +3365,7 @@
 *
 *************** E N D   O F   F U N C T I O N   S E A T O N ************
 *
-      double precision function si1op(j)
+      subroutine si1
 
       use nlte_module
 
@@ -3305,9 +3377,11 @@
 *                OUT OF BOUNDS
 *.... 1996 JAN - SAVED ALL RELEVANT LOCAL VARIABLES
 *
-*---------------------------- DUMMY VARIABLES --------------------------
+*---------------------------- LOCAL VARIABLES --------------------------
 *
-      integer j
+      integer :: j
+
+      real*8 :: cs, stim_nlte, ltepop, si1op_lte, si1em
 *
 *-------------------------------- COMMONS -----------------------------
 *
@@ -3315,6 +3389,7 @@
       include 'common.freqbl'
       include 'common.rhoxbl'
       include 'common.tempbl'
+      include 'common.xnfpbl'
 *
 *---------------------------- LOCAL VARIABLES  ------------------------
 *
@@ -3396,21 +3471,43 @@
             x(it) = peach(it, n + 1) * d + peach(it, n) * d1
          end do
 
-      end if
+      endif
 
-      n     = nt(j)
+      do j = 1, nrhox
 
-      si1op = 9.0d0 * bSi(1, 1, j)                                     ! population part
+          n  = nt(j)
 
-      si1op = si1op * exp(-(x(n) * (1.0 - dt(j)) + x(n + 1) * dt(j)))  ! cross-section part
+!         cross-section
+          cs = exp(-(x(n) * (1.0 - dt(j)) + x(n + 1) * dt(j)))
 
-      si1op = si1op * (1.0d0 - bSi(2, 1, j) * ehvkt(j) / bSi(1, 1, j)) ! stimulated emission part
+!         probability (9.0) * state population (cm^-3) / partition function (xnfpsi(j, 1))
+          ltepop = 9.0d0 * xnfpsi(j, 1) ! statistical weight of the level in question is 9 (see datom.inp)
+
+!         LTE opacity
+          si1op_lte = ltepop * cs * stim(j)
+
+!         stimulated emission factor in NLTE case
+          stim_nlte = 1.0d0 - bSi(2, 1, j) * ehvkt(j) / bSi(1, 1, j)
+
+!         NLTE opacity
+          si1op(j) = bSi(1, 1, j) * ltepop * cs * stim_nlte
+
+!         NLTE emissivity
+          si1em = bSi(2, 1, j) * si1op_lte * bnu(j)
+
+!         source function
+          ssi1(j) = si1em / si1op(j)
+
+      enddo
 
       end
+
 *
 *************** E N D   O F   F U N C T I O N   S I 1 O P **************
 *
+
       subroutine lukeop
+
       implicit none
 *
 *.... SI2, MG2, CA2, N1, O1
