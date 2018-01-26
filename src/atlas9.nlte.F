@@ -2,34 +2,29 @@
 
       implicit none
 
-!      character (len = 2), dimension(30) :: sym
+      logical, dimension(30)                     :: nlte
 
-!      character (len = 4), dimension(10) :: stage = ['I',
-!     $                                               'II',
-!     $                                               'III',
-!     $                                               'IV',
-!     $                                               'V',
-!     $                                               'VI',
-!     $                                               'VII',
-!     $                                               'VIII',
-!     $                                               'IX',
-!     $                                               'X']
+      integer, dimension(30)                     :: nis
 
-      logical, dimension(30) ::    nlte
-
-      integer, dimension(30)    :: nis
-
-      integer, dimension(30, 3) :: nl
+      integer, dimension(30, 3)                  :: nl
 
       real*8, allocatable, dimension(:, :, :, :) :: dep
 
-      real*8, allocatable, dimension(:) ::       bHII
+      real*8, allocatable, dimension(:)          :: bHII
 
-      real*8, allocatable, dimension(:, :, :) :: bC
-      real*8, allocatable, dimension(:, :, :) :: bMg
-      real*8, allocatable, dimension(:, :, :) :: bAl
-      real*8, allocatable, dimension(:, :, :) :: bSi
-      real*8, allocatable, dimension(:, :, :) :: bFe
+      real*8, allocatable, dimension(:, :, :)    :: bC
+      real*8, allocatable, dimension(:, :, :)    :: bMg
+      real*8, allocatable, dimension(:, :, :)    :: bAl
+      real*8, allocatable, dimension(:, :, :)    :: bSi
+      real*8, allocatable, dimension(:, :, :)    :: bFe
+
+      real*8, allocatable, dimension(:)          :: acool_ato, acool_mol
+
+      real*8, allocatable, dimension(:)          :: al1op, sal1
+      real*8, allocatable, dimension(:)          :: mg1op, smg1
+      real*8, allocatable, dimension(:)          :: si1op, ssi1
+      real*8, allocatable, dimension(:)          :: c1op,  sc1
+      real*8, allocatable, dimension(:)          :: fe1op, sfe1
 
       contains
 
@@ -72,7 +67,6 @@
       allocate(bAl(maxval(nis), maxval(nl(13, :)), nrhox))
       allocate(bSi(maxval(nis), maxval(nl(14, :)), nrhox))
       allocate(bFe(maxval(nis), 48,                nrhox))
-!      allocate(bFe(maxval(nis), maxval(nl(26, :)), nrhox))
 
       dep =  1.0d0
 

@@ -73,6 +73,22 @@
 
       end do
 
+      allocate(acool_ato(nrhox), acool_mol(nrhox))
+
+      allocate(al1op(nrhox), sal1(nrhox))
+      allocate(mg1op(nrhox), smg1(nrhox))
+      allocate(si1op(nrhox), ssi1(nrhox))
+      allocate(c1op (nrhox), sc1 (nrhox))
+      allocate(fe1op(nrhox), sfe1(nrhox))
+
+      acool_ato = 0.0d0; acool_mol = 0.0d0
+                     
+      al1op = 0.0d0; sal1 = 0.0d0
+      mg1op = 0.0d0; smg1 = 0.0d0
+      si1op = 0.0d0; ssi1 = 0.0d0
+      c1op  = 0.0d0; sc1  = 0.0d0
+      fe1op = 0.0d0; sfe1 = 0.0d0
+
       if (ifop(1)) call hop
       if (ifop(2) .and. freq .le. 3.28805d15) call h2plop
       if (ifop(3)) call hminop
@@ -91,33 +107,42 @@
 
       do j = 1, nrhox
 
-         a = ah2p(j) +
-     $       ahe1(j) +
-     $       ahe2(j) +
-     $       ahemin(j) +
+         a = ah2p(j)      +
+     $       ahe1(j)      +
+     $       ahe2(j)      +
+     $       ahemin(j)    +
      &       acool_mol(j) +
-     $       aluke(j) +
+     $       aluke(j)     +
      $       ahot(j)
 
          acont(j) = a + ahyd(j) + ahmin(j) + axcont(j) + acool_ato(j)
 
          scont(j) = bnu(j)
 
-         if (acont(j) .gt. 0.0d0) scont(j) = (a         * bnu(j) +
-                                              ahyd(j)   * shyd(j) +
-     &                                        ahmin(j)  * shmin(j) +
-                                              axcont(j) * sxcont(j)) /
+         if (acont(j) .gt. 0.0d0) scont(j) = (a         * bnu(j)    +
+     $                                        ahyd(j)   * shyd(j)   +
+     &                                        ahmin(j)  * shmin(j)  +
+     $                                        axcont(j) * sxcont(j) +
+     $                                        al1op(j)  * sal1(j)   +
+     $                                        mg1op(j)  * smg1(j)   +
+     $                                        si1op(j)  * ssi1(j)   +
+     $                                        c1op(j)   * sc1(j)    +
+     $                                        fe1op(j)  * sfe1(j))  /
      &                                        acont(j)
 
          sigmac(j) = sigh(j) + sighe(j) + sigel(j) + sigh2(j) + sigx(j)
 
       enddo
 
-      end
+      deallocate(al1op, sal1)
+      deallocate(mg1op, smg1)
+      deallocate(si1op, ssi1)
+      deallocate(c1op , sc1 )
+      deallocate(fe1op, sfe1)
 
-*
-*********** E N D   O F   S U B R O U T I N E   K A P P ****************
-*
+      end subroutine kapp
+
+
       subroutine hop
 
       use nlte_module
@@ -1536,63 +1561,54 @@
       end do
 *
       end
-*
+
 *********** E N D   O F   S U B R O U T I N E   H E R A O P ************
-*
+
       subroutine coolop
 
       use nlte_module
 
       implicit none
-*
-*.... SI1, MG1, AL1, C1, FE1, OH, CH
-*
+
+!     OH,  CH
+!     SI1, MG1, AL1, C1, FE1
+
 *-------------------------------- COMMONS -----------------------------
-*
+
       include 'common.sizebl'
       include 'common.freqbl'
       include 'common.opsblk'
       include 'common.rhoxbl'
       include 'common.stateb'
       include 'common.tempbl'
-      include 'common.xnfpbl'
-*
+
 *---------------------------- LOCAL VARIABLES  ------------------------
-*
-      real*8 :: chop, ohop
+
+      real*8  :: chop, ohop
 
       integer :: j
-*
+
 *-------------------------------- EXTERNALS ---------------------------
-*
-!      external al1op, c1op, chop, fe1op, mg1op, ohop, si1op
+
       external chop, ohop
-*
+
 *------------------------------- EXECUTION ----------------------------
-*
-      do j = 1, nrhox
 
-         acool_mol(j) = (chop(j) * xnfpch(j)  +
-     &                   ohop(j) * xnfpoh(j)) * stim(j)
-
-      end do
+      do j = 1, nrhox; acool_mol(j) = chop(j) + ohop(j); enddo
 
       call al1
       call mg1
       call si1
-      call c1 
+      call c1
       call fe1
 
       acool_ato = al1op + mg1op + si1op + c1op + fe1op
 
-      acool_mol( = acool_mol / rho(1 : nrhox)
-      acool_ato( = acool_ato / rho(1 : nrhox)
+      acool_mol = acool_mol / rho(1 : nrhox)
+      acool_ato = acool_ato / rho(1 : nrhox)
 
-      end
+      end subroutine coolop
 
-*
-*********** E N D   O F   S U B R O U T I N E   C O O L O P ************
-*
 
       subroutine al1
 
@@ -1612,6 +1628,7 @@
 
       include 'common.sizebl'
       include 'common.freqbl'
+      include 'common.rhoxbl'
       include 'common.xnfpbl'
 
 *------------------------------- EXECUTION -----------------------------
@@ -1668,13 +1685,13 @@
 
       real*8, dimension(nrhox)    :: xnfp, kT
 
-      real*8, dimension(3)        :: cs, stim_nlte
+      real*8, dimension(3)        :: cs, stim_nlte, e, g
 
       real*8                      :: c1op_lte, c1em
 
-      real*8 ::  freq1, seaton
+      real*8                      :: freq1, seaton
 
-      integer :: itemp1, j
+      integer                     :: itemp1, i, j
 
 *---------------------------- EXTERNAL ---------------------------------
 
@@ -1682,9 +1699,13 @@
 
 *------------------------------ INITIALIZATION ------------------------
 
-      save lp, cs, freq1, itemp1
+      save ltepop, cs, freq1, itemp1
 
       data freq1, itemp1 / 0.0d0, 0 /
+
+!     first 3 multiplets of CI
+      data e / 0.0d0, 1.264, 2.684 / ! level energies in eV
+      data g / 9.0d0, 5.0d0, 1.0d0 / ! statistical weights
 
 *------------------------------- EXECUTION ----------------------------
 
@@ -1716,13 +1737,14 @@
 
          kT = tkev(1 : nrhox)
 
-!        LTE populations (first three multiplets of CI)
-!        probability (9/5/1 * exp(...)) * state population (cm^-3) / partition function (xnfp)
-         ltepop(1, :) = 9.0d0 * xnfp
+!        LTE populations (first 3 multiplets of CI)
+!        probability (g * exp(...)) * state population (cm^-3) / partition function (xnfp)
+         forall(i = 1 : 3) ltepop(i, :) = g(i) * exp(-e(i) / kT) * xnfp
+!         ltepop(1, :) = 9.0d0 * xnfp
 
-         ltepop(2, :) = 5.0d0 * exp(-1.264 / kT) * xnfp
+!         ltepop(2, :) = 5.0d0 * exp(-1.264 / kT) * xnfp
 
-         ltepop(3, :) = exp(-2.683 / kT) * xnfp
+!         ltepop(3, :) = exp(-2.683 / kT) * xnfp
 
       end if
 
@@ -1745,11 +1767,8 @@
 
       enddo
 
-      end
+      end subroutine c1
 
-*
-*************** E N D   O F   F U N C T I O N   C 1 O P ****************
-*
 
       double precision function chop(j)
 
@@ -1759,7 +1778,7 @@
 *
 *---------------------------- DUMMY VARIABLES --------------------------
 *
-      integer j
+      integer :: j
 *
 *-------------------------------- COMMONS -----------------------------
 *
@@ -1770,6 +1789,8 @@
       include 'common.rhoxbl'
       include 'common.tempbl'
       include 'common.stateb'
+      include 'common.xnfpbl'
+
 *
 *---------------------------- LOCAL VARIABLES  ------------------------
 *
@@ -2347,28 +2368,26 @@
          it = (t(j) - 2000.0d0) / 500.0d0 + 1.0
          it = max0(it, 1)
          tn = dble(it) * 500.0d0 + 1500.0d0
+
          chop = exp((crosscht(it) + (crosscht(it+1) - crosscht(it)) * 
-     &          (t(j) - tn) / 500.0d0) * tenlog) * part
+     &          (t(j) - tn) / 500.0d0) * tenlog) * part * xnfpch(j) * stim(j)
+
       end if
 *
       end
 *
 *************** E N D   O F   F U N C T I O N   C H O P ****************
 *
-      double precision function fe1op(j)
+      subroutine fe1
 
       use nlte_module
 
       implicit none
-*
+
 *.... CROSS-SECTION TIMES PARTITION FUNCTION
-*
-*----------------------------- DUMMY VARIABLE --------------------------
-*
-      integer j
-*
+
 *------------------------------- COMMONS -------------------------------
-*
+
       include 'common.sizebl'
       include 'common.freqbl'
       include 'common.rhoxbl'
@@ -2376,25 +2395,29 @@
       include 'common.stateb'
       include 'common.xnfpbl'
 
-*
 *----------------------------- LOCAL VARIABLES -------------------------
-*
 
-      double precision  bolt(48, maxd), e(48), freq1, g(48), wno(48), 
-     &                  xsect(48)
+      real*8, dimension(48, nrhox) :: ltepop
 
-      integer i, itemp1, k
+      real*8, dimension(48)        :: e, g, wno, cs, stim_nlte
 
-      real*8, dimension(48) :: fe1st
+      real*8                       :: freq1, fe1op_lte, fe1em
 
-      real*8, parameter :: c = 2.99792458d10
+      integer                      :: i, j, itemp1
 
-      save bolt, e, freq1, g, itemp1, wno, xsect
-*
+*----------------------------- PARAMETERS ------------------------------
+
+      real*8, parameter            :: c = 2.99792458d10
+
 *----------------------------- INITIALIZATION --------------------------
-*
+
+      save ltepop, e, freq1, g, itemp1, wno, cs
+
       data itemp1 / 0 /, freq1 / 0.0d0 /
 
+!     first 48 multiplets of FeI
+
+!     level energies in cm^-1
       data e /     500.0,  7500.0, 12500.0, 17500.0, 19000.0, 19500.0,
      &           19500.0, 21000.0, 22000.0, 23000.0, 23000.0, 24000.0,
      &           24000.0, 24500.0, 24500.0, 26000.0, 26500.0, 26500.0,
@@ -2404,6 +2427,7 @@
      &           37000.0, 37000.0, 38500.0, 40000.0, 40000.0, 41000.0,
      &           41000.0, 43000.0, 43000.0, 43000.0, 43000.0, 44000.0 /
 
+!     statistical weights
       data g /      25.0,    35.0,    21.0,    15.0,     9.0,    35.0,
      &              33.0,    21.0,    27.0,    49.0,     9.0,    21.0,
      &              27.0,     9.0,     9.0,    25.0,    33.0,    15.0,
@@ -2413,6 +2437,7 @@
      &              15.0,    21.0,    15.0,    25.0,    21.0,    35.0,
      &               5.0,    15.0,    45.0,    35.0,    55.0,    25.0 /
 
+!     wave numbers
       data wno / 63500.0, 58500.0, 53500.0, 59500.0, 45000.0, 44500.0,
      &           44500.0, 43000.0, 58000.0, 41000.0, 54000.0, 40000.0,
      &           40000.0, 57500.0, 55500.0, 38000.0, 57500.0, 57500.0,
@@ -2422,9 +2447,7 @@
      &           27000.0, 54000.0, 27500.0, 24000.0, 47000.0, 23000.0,
      &           44000.0, 42000.0, 42000.0, 21000.0, 42000.0, 42000.0 /
 
-*
 *------------------------------- EXECUTION -----------------------------
-*
 
       if (itemp .ne. itemp1) then
 
@@ -2432,20 +2455,13 @@
 
          itemp1 = itemp
 
-         do k = 1, nrhox
-
-            do i = 1, 48
-
-!             population
-              bolt(i, k) = bFe(1, i, k) * ! NLTE departure
-     $                     g(i) * exp(-e(i) * c * hkt(k)) * xnfpfe(k, 1) ! LTE population
-
-            end do
-
-         end do
+!        LTE populations (first 48 multiplets of FeI)
+!        probability (g * exp(...)) * state population (cm^-3) / partition function (xnfp)
+         forall(j = 1 : nrhox) ltepop(:,j)=g(:)*exp(-e(:)*c*hkt(j))*xnfpfe(j,1)
 
       end if
 
+!     cross-sections
       if (freq .ne. freq1) then
 
          freq1 = freq
@@ -2454,9 +2470,9 @@
 
             do i = 1, 48
 
-               xsect(i) = 0.0d0
+               cs(i) = 0.0d0
 
-               if (wno(i) .lt. waveno) xsect(i) =  3.0d-18 /
+               if (wno(i) .lt. waveno) cs(i) =  3.0d-18 /
      &            (1.0d0 + ((wno(i) + 3000.0d0 - waveno) /
      &            wno(i) / 0.1d0) ** 4)
 
@@ -2466,21 +2482,30 @@
 
       end if
 
-      fe1op = 0.0d0
+      do j = 1, nrhox
 
-      if (waveno .ge. 21000.0d0) then
+         fe1op(j) = 0.0d0
 
-         fe1st = 1.0d0 - bFe(2, 1, j) * ehvkt(j) / bFe(1, :, j)
+         if (waveno .lt. 21000.0d0) cycle
 
-         do i = 1, 48
+!        LTE opacity
+         fe1op_lte = sum(ltepop(:, j) * cs) * stim(j)
 
-            fe1op = fe1op + xsect(i) *   ! cross-section part
-     $                      bolt(i, j) * ! population part
-     $                      fe1st(i)     ! stimulated emission part
+!        stimulated emission factor in NLTE case
+         stim_nlte = 1.0d0 - bFe(2, 1, j) * ehvkt(j) / bFe(1, 1 : 48, j)
+
+!        NLTE opacity
+         fe1op(j) = sum(bFe(1, 1 : 48, j) * ltepop(:, j) * cs * stim_nlte)
+
+!        NLTE emissivity
+         fe1em = bFe(2, 1, j) * fe1op_lte * bnu(j)
+
+!        source function
+         sfe1(j) = fe1em / fe1op(j)
 
          end do
 
-      end if
+      enddo
 
       end
 
@@ -2630,11 +2655,12 @@
 *
       include 'common.sizebl'
       include 'common.constb'
-*
+
       include 'common.freqbl'
       include 'common.rhoxbl'
       include 'common.tempbl'
       include 'common.stateb'
+      include 'common.xnfpbl'
 *
 *----------------------------- LOCAL VARIABLES -------------------------
 *
@@ -3337,8 +3363,10 @@
          it = (t(j) - 2000.0d0) / 500.0d0 + 1.0
          it = max0(it, 1)
          tn = dble(it) * 500.0d0 + 1500.0d0
+
          ohop = exp((crossoht(it) + (crossoht(it+1) - crossoht(it)) *
-     &          (t(j) - tn) / 500.0d0) * tenlog) * part
+     &          (t(j) - tn) / 500.0d0) * tenlog) * part * xnfpoh(j) * stim(j)
+
       end if
 *
       end
