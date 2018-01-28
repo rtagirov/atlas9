@@ -1265,7 +1265,6 @@ c	       print *, ' *** Model ', imod
 *
                end if
 
-
 !---------------------------------------------------------
 !---------- write for debugging reasons------------------
 !               do mm=1, nrhox
@@ -1327,7 +1326,7 @@ c	       print *, ' *** Model ', imod
                      if(numnu .eq. 1) dbnudt(j) = 4.0d0 * sigma / pi * 
      &                                            t(j) ** 3
                   end do
-*
+
 !----------- opacity switches no 15 and no 16 -------------------
                   if (.not. ifop(15) .and. .not. ifop(16)) then
 *
@@ -1337,7 +1336,7 @@ c	       print *, ' *** Model ', imod
                      stepwt = 1.0d0
 
                      call kapp
-*
+
                      if (ifop(14) .or. ifop(17) .or. ifop(18)) then
 *
 *.... FOR THE CASE OF HYDROGEN LINE BLANKETING
@@ -1427,7 +1426,7 @@ c                        if (stopfl) stop
 *
 *.... THIS SECTION IS FOR THE LINE BLANKETED MODELS
 *.... FIRST THE CONTINUUM OPACITIES
-*
+
                      call kapp
 *
 *.... THIS NEXT LOOP IS NEEDED TO INITIALIZE ALINE, ... EACH NU

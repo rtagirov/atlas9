@@ -73,13 +73,20 @@
 
       end do
 
-      allocate(acool_ato(nrhox), acool_mol(nrhox))
+      if (.not. allocated(acool_ato)) allocate(acool_ato(nrhox))
+      if (.not. allocated(acool_mol)) allocate(acool_mol(nrhox))
 
-      allocate(al1op(nrhox), sal1(nrhox))
-      allocate(mg1op(nrhox), smg1(nrhox))
-      allocate(si1op(nrhox), ssi1(nrhox))
-      allocate(c1op (nrhox), sc1 (nrhox))
-      allocate(fe1op(nrhox), sfe1(nrhox))
+      if (.not. allocated(al1op)) allocate(al1op(nrhox))
+      if (.not. allocated(mg1op)) allocate(mg1op(nrhox))
+      if (.not. allocated(si1op)) allocate(si1op(nrhox))
+      if (.not. allocated(c1op )) allocate(c1op (nrhox))
+      if (.not. allocated(fe1op)) allocate(fe1op(nrhox))
+
+      if (.not. allocated(sal1)) allocate(sal1(nrhox))
+      if (.not. allocated(smg1)) allocate(smg1(nrhox))
+      if (.not. allocated(ssi1)) allocate(ssi1(nrhox))
+      if (.not. allocated(sc1 )) allocate(sc1 (nrhox))
+      if (.not. allocated(sfe1)) allocate(sfe1(nrhox))
 
       acool_ato = 0.0d0; acool_mol = 0.0d0
                      
@@ -1681,17 +1688,19 @@
 
 *---------------------------- LOCAL VARIABLES  ------------------------
 
-      real*8, dimension(3, nrhox) :: ltepop
+      real*8, allocatable, dimension(:, :) :: c1pop
 
-      real*8, dimension(nrhox)    :: xnfp, kT
+      real*8, allocatable, dimension(:)    :: c1cs
 
-      real*8, dimension(3)        :: cs, stim_nlte, e, g
+      real*8, dimension(nrhox)             :: xnfp, kT
 
-      real*8                      :: c1op_lte, c1em
+      real*8, dimension(3)                 :: stim_nlte, e, g
 
-      real*8                      :: freq1, seaton
+      real*8                               :: c1op_lte, c1em
 
-      integer                     :: itemp1, i, j
+      real*8                               :: freq1, seaton
+
+      integer                              :: itemp1, i, j
 
 *---------------------------- EXTERNAL ---------------------------------
 
@@ -1699,7 +1708,7 @@
 
 *------------------------------ INITIALIZATION ------------------------
 
-      save ltepop, cs, freq1, itemp1
+      save c1pop, c1cs, freq1, itemp1
 
       data freq1, itemp1 / 0.0d0, 0 /
 
@@ -1714,16 +1723,18 @@
 
          freq1 = freq
 
-         cs = 0.0d0
+         if (.not. allocated(c1cs)) allocate(c1cs(3))
 
-         if (freq .ge. 2.7254d15) cs(1) = seaton(2.7254d15, 1.219d-17,
-     &                                           2.0d0, 3.317d0)
+         c1cs = 0.0d0
 
-         if (freq .ge. 2.4196d15) cs(2) = seaton(2.4196d15, 1.03d-17,
-     &                                           1.5d0, 2.789d0)
+         if (freq .ge. 2.7254d15) c1cs(1) = seaton(2.7254d15, 1.219d-17,
+     &                                             2.0d0, 3.317d0)
 
-         if (freq .ge. 2.0761d15) cs(3) = seaton(2.0761d15, 9.59d-18,
-     &                                           1.5d0, 3.501d0)
+         if (freq .ge. 2.4196d15) c1cs(2) = seaton(2.4196d15, 1.03d-17,
+     &                                             1.5d0, 2.789d0)
+
+         if (freq .ge. 2.0761d15) c1cs(3) = seaton(2.0761d15, 9.59d-18,
+     &                                             1.5d0, 3.501d0)
 
       endif
 
@@ -1731,7 +1742,9 @@
 
          itemp1 = itemp
 
-         ltepop = 0.0d0
+         if (.not. allocated(c1pop)) allocate(c1pop(3, nrhox))
+
+         c1pop = 0.0d0
 
          xnfp = xnfpc(1 : nrhox, 1)
 
@@ -1739,7 +1752,7 @@
 
 !        LTE populations (first 3 multiplets of CI)
 !        probability (g * exp(...)) * state population (cm^-3) / partition function (xnfp)
-         forall(i = 1 : 3) ltepop(i, :) = g(i) * exp(-e(i) / kT) * xnfp
+         forall(i = 1 : 3) c1pop(i, :) = g(i) * exp(-e(i) / kT) * xnfp
 !         ltepop(1, :) = 9.0d0 * xnfp
 
 !         ltepop(2, :) = 5.0d0 * exp(-1.264 / kT) * xnfp
@@ -1751,13 +1764,13 @@
       do j = 1, nrhox
 
 !        LTE opacity
-         c1op_lte = sum(ltepop(:, j) * cs) * stim(j)
+         c1op_lte = sum(c1pop(:, j) * c1cs) * stim(j)
 
 !        stimulated emission factor in NLTE case
          stim_nlte = 1.0d0 - bC(2, 1, j) * ehvkt(j) / bC(1, 1 : 3, j)
 
 !        NLTE opacity
-         c1op(j) = sum(bC(1, 1 : 3, j) * ltepop(:, j) * cs * stim_nlte)
+         c1op(j) = sum(bC(1, 1 : 3, j) * c1pop(:, j) * c1cs * stim_nlte)
 
 !        NLTE emissivity
          c1em = bC(2, 1, j) * c1op_lte * bnu(j)
@@ -2369,15 +2382,16 @@
          it = max0(it, 1)
          tn = dble(it) * 500.0d0 + 1500.0d0
 
-         chop = exp((crosscht(it) + (crosscht(it+1) - crosscht(it)) * 
-     &          (t(j) - tn) / 500.0d0) * tenlog) * part * xnfpch(j) * stim(j)
+         chop = exp((crosscht(it) + (crosscht(it+1) - crosscht(it)) *
+     &          (t(j) - tn) / 500.0d0) * tenlog) * part *
+     $           xnfpch(j) * stim(j)
 
       end if
-*
+
       end
-*
+
 *************** E N D   O F   F U N C T I O N   C H O P ****************
-*
+
       subroutine fe1
 
       use nlte_module
@@ -2397,21 +2411,23 @@
 
 *----------------------------- LOCAL VARIABLES -------------------------
 
-      real*8, dimension(48, nrhox) :: ltepop
+      real*8, allocatable, dimension(:, :) :: fe1pop
 
-      real*8, dimension(48)        :: e, g, wno, cs, stim_nlte
+      real*8, allocatable, dimension(:)    :: fe1cs
 
-      real*8                       :: freq1, fe1op_lte, fe1em
+      real*8, dimension(48)                :: e, g, wno, stim_nlte
 
-      integer                      :: i, j, itemp1
+      real*8                               :: freq1, fe1op_lte, fe1em
+
+      integer                              :: i, j, itemp1
 
 *----------------------------- PARAMETERS ------------------------------
 
-      real*8, parameter            :: c = 2.99792458d10
+      real*8, parameter                    :: c = 2.99792458d10
 
 *----------------------------- INITIALIZATION --------------------------
 
-      save ltepop, e, freq1, g, itemp1, wno, cs
+      save fe1pop, fe1cs, freq1, itemp1
 
       data itemp1 / 0 /, freq1 / 0.0d0 /
 
@@ -2451,13 +2467,15 @@
 
       if (itemp .ne. itemp1) then
 
-         freq1  = 0.0d0
+       freq1  = 0.0d0
 
-         itemp1 = itemp
+       itemp1 = itemp
 
-!        LTE populations (first 48 multiplets of FeI)
-!        probability (g * exp(...)) * state population (cm^-3) / partition function (xnfp)
-         forall(j = 1 : nrhox) ltepop(:,j)=g(:)*exp(-e(:)*c*hkt(j))*xnfpfe(j,1)
+       if (.not. allocated(fe1pop)) allocate(fe1pop(48, nrhox))
+
+!      LTE populations (first 48 multiplets of FeI)
+!      probability (g * exp(...)) * state population (cm^-3) / partition function (xnfp)
+       forall(j=1:nrhox)fe1pop(:,j)=g(:)*exp(-e(:)*c*hkt(j))*xnfpfe(j,1)
 
       end if
 
@@ -2468,11 +2486,13 @@
 
          if (waveno .ge. 21000.0d0) then
 
+            if (.not. allocated(fe1cs)) allocate(fe1cs(48))
+
             do i = 1, 48
 
-               cs(i) = 0.0d0
+               fe1cs(i) = 0.0d0
 
-               if (wno(i) .lt. waveno) cs(i) =  3.0d-18 /
+               if (wno(i) .lt. waveno) fe1cs(i) =  3.0d-18 /
      &            (1.0d0 + ((wno(i) + 3000.0d0 - waveno) /
      &            wno(i) / 0.1d0) ** 4)
 
@@ -2489,21 +2509,19 @@
          if (waveno .lt. 21000.0d0) cycle
 
 !        LTE opacity
-         fe1op_lte = sum(ltepop(:, j) * cs) * stim(j)
+         fe1op_lte = sum(fe1pop(:, j) * fe1cs) * stim(j)
 
 !        stimulated emission factor in NLTE case
          stim_nlte = 1.0d0 - bFe(2, 1, j) * ehvkt(j) / bFe(1, 1 : 48, j)
 
 !        NLTE opacity
-         fe1op(j) = sum(bFe(1, 1 : 48, j) * ltepop(:, j) * cs * stim_nlte)
+         fe1op(j) = sum(bFe(1, 1 : 48, j)*fe1pop(:, j)*fe1cs*stim_nlte)
 
 !        NLTE emissivity
          fe1em = bFe(2, 1, j) * fe1op_lte * bnu(j)
 
 !        source function
          sfe1(j) = fe1em / fe1op(j)
-
-         end do
 
       enddo
 
@@ -3365,10 +3383,11 @@
          tn = dble(it) * 500.0d0 + 1500.0d0
 
          ohop = exp((crossoht(it) + (crossoht(it+1) - crossoht(it)) *
-     &          (t(j) - tn) / 500.0d0) * tenlog) * part * xnfpoh(j) * stim(j)
+     &          (t(j) - tn) / 500.0d0) * tenlog) * part *
+     $           xnfpoh(j) * stim(j)
 
       end if
-*
+
       end
 *
 *************** E N D   O F   F U N C T I O N   O H O P ****************

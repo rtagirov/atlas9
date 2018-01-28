@@ -323,7 +323,7 @@
 
       un = 1845
 
-      open(unit = un, file = 'LEV/'//levname, action = 'read')
+      open(unit = un, file = 'nltepop/'//levname, action = 'read')
 
       read(un, *) s
 
