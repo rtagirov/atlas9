@@ -31,7 +31,6 @@
       subroutine nlte_elem(nrhox)
 
       use file_operations
-      use utils
 
       integer, intent(in)       :: nrhox
 
@@ -144,7 +143,7 @@
       subroutine nlte_depart(nrhox)
 
       use utils
-      use string_operations
+      use string_operations ! function str beloew is described here
 
       include 'common.sizebl'
       include 'common.stateb'
@@ -156,15 +155,13 @@
 
       character(:), allocatable :: lev, stage, sym
 
-!      character(:), allocatable :: stage
-
       integer :: k, i, l
 
       call read_nlte_lev(nrhox, 'ELECTR', 'pop', val)
 
       xne(1 : nrhox) = xnatom(1 : nrhox) * val(1 : nrhox)
 
-!------------- READING NLTE DEPARTURES START ----------------------
+!------------- READING NLTE DEPARTURES ----------------------
 
       do k = 1, 30
 
@@ -209,9 +206,6 @@
          endselect
 
          do i = 1, nis(k)
-
-!            stage(i) = trim(adjustl(stage(i)))
-!            stage(i) = rm_char(stage(i), ' ')
 
             selectcase (i)
 
@@ -299,6 +293,9 @@
 
       subroutine read_nlte_lev(nrhox, levname, mode, val)
 
+      use utils
+      use file_operations
+
       implicit none
 
       integer, intent(in) :: nrhox
@@ -321,9 +318,9 @@
       allocate(val4(nrhox))
       allocate(val5(nrhox))
 
-      un = 1845
+      un = get_file_unit(1845)
 
-      open(unit = un, file = 'nltepop/'//levname, action = 'read')
+      open(unit = un, file = nltepop_dir//levname, action = 'read')
 
       read(un, *) s
 
@@ -337,7 +334,8 @@
       if (mode == 'dep') val(1 : nrhox) = val5(1 : nrhox)
 
       if (mode /= 'pop' .and. mode /= 'dep')
-     $   stop 'subroutine read_nlte_lev: mode is not recognized'
+     $ call error('subroutine read_nlte_lev: mode is not recognized.
+     $ Abort.')
 
       deallocate(val1)
       deallocate(val2)
@@ -347,6 +345,39 @@
 
       return
 
-      end
+      end subroutine read_nlte_lev
+
+      subroutine print_pop(filename, pop)
+
+      use file_operations
+
+      include 'common.sizebl'
+      include 'common.rhoxbl'
+
+      character (len = *),      intent(in) :: filename
+
+      real*8, dimension(nrhox), intent(in) :: pop
+
+      integer                              :: un, j
+
+      logical                              :: exists
+
+      inquire(file = ltepop_dir//filename, exist = exists)
+
+      if (.not. exists) then
+
+          un = get_file_unit(545)
+
+          open(unit = un, file = ltepop_dir//filename, action = 'write')
+
+          write(un, '(es15.7)') (pop(j), j = 1, nrhox)
+
+          close(un)
+
+      endif
+
+      return
+
+      end subroutine print_pop
 
       end module

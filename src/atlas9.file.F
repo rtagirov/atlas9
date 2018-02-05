@@ -10,6 +10,10 @@
 
       character (len=9), parameter :: print_file   = 'print.out'
 
+      character (len=7), parameter :: ltepop_dir   = 'ltepop/'
+
+      character (len=8), parameter :: nltepop_dir  = 'nltepop/'
+
       public
 
       contains
@@ -54,6 +58,41 @@
 
       END SUBROUTINE
 
+      ! returns a free file unit; not threadsafe
+      function get_file_unit(s)
+
+      use utils
+
+      integer, optional :: s
+
+      integer :: get_file_unit
+
+      integer :: i, i0
+
+      logical :: taken
+
+      i0 = 100
+
+      if (present(s)) i0 = s
+
+      do i = i0, 90000
+
+         inquire(unit = i, opened = taken)
+
+         if (.not. taken) then
+
+            get_file_unit = i
+
+            return
+
+         endif
+
+      enddo
+
+      call error('atlas9.util.F: function get_file_unit:
+     $            no free unit found. abort.')
+
+      end function get_file_unit
 
       subroutine open_to_append(file_unit, file_name)
 

@@ -153,11 +153,13 @@
       subroutine hop
 
       use nlte_module
+      use file_operations
+      use string_operations
 
       implicit none
 
 *.... REQUIRES COULFF AND XKARSAS
-*
+
 *-------------------------------- COMMONS -----------------------------
 
       include 'common.sizebl'
@@ -171,32 +173,29 @@
       include 'common.tempbl'
       include 'common.elembl'
 
-*
 *-------------------------------- EXTERNALS ---------------------------
-*
+
       external coulff, xkarsas
-*
+
 *---------------------------- LOCAL VARIABLES  ------------------------
-*
+
       double precision  bolt(maxd, 8), boltex(maxd), c, cfree, cont(8), 
      &                  coulff, ex, exlim(maxd), freet(maxd), freqi, 
      &                  hyd, s, xkarsas, xr
-      save bolt, boltex, exlim, freet, xr
-      integer itemp1, j, n
 
-      logical :: exists
+      save bolt, boltex, exlim, freet, xr
+
+      integer itemp1, j, n
 
       real*8, dimension(nrhox, 8) :: bolt_r
 
       real*8 :: hyd_lte, ff
 
-      integer :: i
-*
 *---------------------------- INITIALIZATION --------------------------
-*
+
       save itemp1
       data itemp1 / 0 /
-*
+
 *------------------------------- EXECUTION ----------------------------
 
       if (itemp .ne. itemp1) then
@@ -206,20 +205,13 @@
          do j = 1, nrhox
 
             do n = 1, 8
-               bolt(j, n) = exp(-(hydip - hydip / dble(n*n)) /
-     &           tkev(j)) * 2.0d0 * dble(n*n) * xnfph(j,1) / rho(j)
+
+               bolt(j, n) = exp(-(hydip - hydip / dble(n * n)) /
+     &         tkev(j)) * 2.0d0 * dble(n * n) * xnfph(j, 1) / rho(j)
+
             end do
 
-            do n = 1, 8
-
-!               bolt(j, n) = bolt(j, n) * bhyd(j, n)
-
-               bolt_r(j, n) = bolt(j, n) * rho(j) / xnatom(j)
-!               bolt_r(j, n) = bolt(j, n) * rho(j) * abund(1)
-!               bolt_r(j, n) = xnfh(j, 1)
-!               bolt_r(j, n) = bhyd(j, n)
-               
-            enddo
+            bolt_r(j, :) = bolt(j, :) * rho(j) / xnatom(j)
 
             freet(j) = xne(j) / sqrt(t(j)) / rho(j)
 
@@ -229,36 +221,19 @@
 !            boltex(j) = exp(-13.427d0 / tkev(j)) * xr
 !            exlim(j) =  exp(-hydip    / tkev(j)) * xr
 
-!             print*, j, ' ', bhii(j)
-
          enddo
 
-!         stop
+         call print_pop('XNATOM', xnatom(1 : nrhox))
+
+         call print_pop('ELECTR', xne(1 : nrhox) / xnatom(1 : nrhox))
+
+         do n = 1, 8; call print_pop('HI'//str(n), bolt_r(:, n)); enddo
+
+         call print_pop('HII', xnfh(1 : nrhox, 2) / xnatom(1 : nrhox))
 
       endif
 
-            inquire(file = 'hydpops.out', exist = exists)
-
-            if (.not. exists) then
-
-               open(unit = 1432, file = 'hydpops.out', action = 'write')
-
-               write(1432, '(9(es10.3,2x))') (bolt_r(i, 1),
-     $                                        bolt_r(i, 2),
-     $                                        bolt_r(i, 3),
-     $                                        bolt_r(i, 4),
-     $                                        bolt_r(i, 5),
-     $                                        bolt_r(i, 6),
-     $                                        bolt_r(i, 7),
-     $                                        bolt_r(i, 8),
-     $                                        xnfh(i, 2) / xnatom(i),
-     $                                        i = 1, nrhox)
-
-               close(unit = 1432)
-
-            endif
-
-      do n = 1, 8; cont(n) = xkarsas (1.0d0, n, n); end do
+      do n = 1, 8; cont(n) = xkarsas(1.0d0, n, n); enddo
 
       freqi = 1.0d0 / freq
 
@@ -303,15 +278,14 @@
 
       end do
 
-      end
-*
-*********** E N D   O F   S U B R O U T I N E   H O P ********************* 
-*
+      end subroutine hop
+
       double precision function coulx (n, freq, z)
+
       implicit none
-*
+
 *---------------------------- DUMMY VARIABLES --------------------------
-*
+
       double precision freq, z
       integer n
 *
@@ -500,10 +474,12 @@
 *
       subroutine hminop
 
+      use nlte_module
+
       implicit none
-*
+
 *-------------------------------- COMMONS -----------------------------
-*
+
       include 'common.sizebl'
       include 'common.depart'
       include 'common.freqbl'
@@ -512,9 +488,9 @@
       include 'common.rhoxbl'
       include 'common.stateb'
       include 'common.tempbl'
-*
+
 *---------------------------- LOCAL VARIABLES  ------------------------
-*
+
       double precision bf(85), ff(11, 22), fflog(22, 11), fftheta(maxd), 
      &                 fftlog(1), fftt(11), h, hminbf, hminff, 
      &                 theta(maxd), 
@@ -522,21 +498,22 @@
      &                 wbf(85), 
      &                 wfflog(22), xhmin(maxd)
       integer          i, itemp1, itheta, iwave, j, map1, maxwave
+
       logical          start
+
       save itemp1, start, fflog, theta, wfflog, xhmin
 
-      logical :: exists
-*
+
 *------------------------------ EXTERNAL FUNCTION ----------------------
-*
+
       external linter, map1
-*
+
 *------------------------------ INITIALIZATION ------------------------
-*
+
       data itemp1, start / 0, .true. /
-*
+
 *.... FROM MATHISEN (1984), AFTER WISHART(1979) AND BROAD AND REINHARDT (1976)
-*
+
       data bf/   0.067,   0.088,    0.117,    0.155,    0.206,  
      &           0.283,   0.414,    0.703,    1.24,     2.33,  
      &          11.60,   13.90,    24.30,    66.70,    95.00,
@@ -554,7 +531,7 @@
      &          18.62,   16.74,    14.85,    12.95,    11.07,  
      &           9.211,   7.407,    5.677,    4.052,    2.575,  
      &           1.302,   0.8697,   0.4974,   0.1989,   0.00 /
-*
+
       data ((ff(i, j), i = 1, 11), j = 1, 11) /
      &.0178,.0222,.0308,.0402,.0498,.0596,.0695,.0795,.0896, .131, .172,   1823
      &.0228,.0280,.0388,.0499,.0614,.0732,.0851,.0972, .110, .160, .211,   2278
@@ -567,7 +544,7 @@
      & .154, .188, .249, .309, .367, .424, .482, .539, .597, .830, 1.07,   6510
      & .208, .250, .332, .409, .484, .557, .630, .702, .774, 1.06, 1.36,   7595
      & .293, .354, .468, .576, .677, .777, .874, .969, 1.06, 1.45, 1.83/   9113
-*
+
       data ((ff(i, j), i = 1, 11), j = 12, 22) /
      & .358, .432, .572, .702, .825, .943, 1.06, 1.17, 1.28, 1.73, 2.17,  10126
      & .448, .539, .711, .871, 1.02, 1.16, 1.29, 1.43, 1.57, 2.09, 2.60,  11392
@@ -580,12 +557,12 @@
      & 27.0, 32.4, 42.6, 51.9, 60.7, 68.9, 76.8, 84.2, 91.4, 117., 140.,  91134
      & 42.3, 50.6, 66.4, 80.8, 94.5, 107., 120., 131., 142., 183., 219., 113918
      & 75.1, 90.0, 118., 144., 168., 191., 212., 234., 253., 325., 388./ 151890
-*
+
       data thetaff / 
      &     0.5, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.8, 3.6 /
-*
+
 *.... BELL AND BERRINGTON J.PHYS.B,VOL. 20, 801-806,1987.
-*
+
       data wavek /
      &   0.50,  0.40, 0.35, 0.30, 0.25, 0.20, 0.18, 0.16, 0.14, 0.12, 
      &   0.10,  0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01, 
@@ -608,16 +585,17 @@
      &         1350.00, 1375.00, 1400.00, 1425.00, 1450.00,
      &         1475.00, 1500.00, 1525.00, 1550.00, 1575.00,
      &         1600.00, 1610.00, 1620.00, 1630.00, 1643.91/
-*
+
 *------------------------------- EXECUTION ----------------------------
-*
+
       if (start) then
+
          start = .false.
-*
+
          do iwave = 1, 22
-*
+
 *.... THE NUMBER 91.134 IS TAKEN FROM BELL AND BERRINGTON
-*
+
             wfflog(iwave) = log (91.134d0 / wavek(iwave))
 *
             do itheta = 1, 11
@@ -629,38 +607,32 @@
       end if
 *
       if (itemp .ne. itemp1 ) then
+
          itemp1 = itemp
-*
+
          do j = 1, nrhox
+
             theta(j) = 5040.0d0 / t(j)
-*
+
 *....  0.754209 HOTOP AND LINEBERGER J.PHYS.CHEM.REF.DATA VOL 14,731-752,1985.
-*
-            xhmin(j) = exp(0.754209d0 / tkev(j)) / 
-     &                 (2.0d0 * 2.4148d15 * t(j) * sqrt(t(j))) * 
-     &                 bmin(j) * bhyd(j, 1) * xnfph(j, 1) * xne(j)
-         end do
-*
-      end if
 
-      inquire(file = 'hminus.out', exist = exists)
+            xhmin(j) = exp(0.754209d0 / tkev(j)) /
+     &                 (2.0d0 * 2.4148d15 * t(j) * sqrt(t(j))) *
+     &                  xnfph(j, 1) * xne(j)
 
-      if (.not. exists) then
+         enddo
 
-         open(unit = 1433, file = 'hminus.out', action = 'write')
+         call print_pop('HMINUS', xhmin(1 : nrhox) / xnatom(1 : nrhox))
 
-         write(1433, '(3(es10.3,2x))') (xhmin(i) / xnatom(i),
-     $                                xne(i) / xnatom(i),
-     $                                xnatom(i),
-     $                                i = 1, nrhox)
-
-         close(unit = 1433)
+         xhmin(1 : nrhox) = xhmin(1 : nrhox) *
+     $                      bmin(1 : nrhox)  *
+     $                      bhyd(1 : nrhox, 1)
 
       endif
-*
+
       wave    = 2.99792458d17 / freq
       wavelog(1) = log(wave)
-*
+
       do itheta = 1, 11
          call linter(wfflog, fflog(1,itheta), 22, wavelog, fftlog, 1)
          fftt(itheta) = exp(fftlog(1)) / thetaff(itheta) * 5040.0d0 * 
@@ -1625,18 +1597,21 @@
 
 *.... CROSS-SECTION TIMES THE PARTITION FUNCTION
 
-*--------------------------------- LOCAL VARIABLES ----------------------
-
-      integer :: j
-
-      real*8 :: cs, stim_nlte, ltepop, al1op_lte, al1em
-
 *------------------------------- COMMON --------------------------------
 
       include 'common.sizebl'
       include 'common.freqbl'
       include 'common.rhoxbl'
       include 'common.xnfpbl'
+      include 'common.stateb'
+
+*--------------------------------- LOCAL VARIABLES ----------------------
+
+      integer :: j
+
+      real*8, dimension(nrhox) :: ltepop
+
+      real*8 :: cs, stim_nlte, al1op_lte, al1em
 
 *------------------------------- EXECUTION -----------------------------
 
@@ -1648,16 +1623,16 @@
       do j = 1, nrhox
 
 !         probability (6.0) * state population (cm^-3) / partition function (xnfpal(j, 1))
-          ltepop = 6.0d0 * xnfpal(j, 1) ! statistical weight of the level in question is 6 (see datom.inp)
+          ltepop(j) = 6.0d0 * xnfpal(j, 1) ! statistical weight of the level in question is 6 (see datom.inp)
 
 !         LTE opacity
-          al1op_lte =  ltepop * cs * stim(j)
+          al1op_lte =  ltepop(j) * cs * stim(j)
 
 !         stimulated emission factor in NLTE case
           stim_nlte = 1.0d0 - bAl(2, 1, j) * ehvkt(j) / bAl(1, 1, j)
 
 !         NLTE opacity
-          al1op(j) = bAl(1, 1, j) * ltepop * cs * stim_nlte
+          al1op(j) = bAl(1, 1, j) * ltepop(j) * cs * stim_nlte
 
 !         NLTE emissivity
           al1em = bAl(2, 1, j) * al1op_lte * bnu(j)
@@ -1667,12 +1642,15 @@
 
       enddo
 
+      call print_pop('AlI1', ltepop / xnatom(1 : nrhox))
+
       end subroutine al1
 
 
       subroutine c1
 
       use nlte_module
+      use string_operations
 
       implicit none
 
@@ -1685,6 +1663,7 @@
       include 'common.rhoxbl'
       include 'common.tempbl'
       include 'common.xnfpbl'
+      include 'common.stateb'
 
 *---------------------------- LOCAL VARIABLES  ------------------------
 
@@ -1753,11 +1732,12 @@
 !        LTE populations (first 3 multiplets of CI)
 !        probability (g * exp(...)) * state population (cm^-3) / partition function (xnfp)
          forall(i = 1 : 3) c1pop(i, :) = g(i) * exp(-e(i) / kT) * xnfp
-!         ltepop(1, :) = 9.0d0 * xnfp
 
-!         ltepop(2, :) = 5.0d0 * exp(-1.264 / kT) * xnfp
+         do i = 1, 3
 
-!         ltepop(3, :) = exp(-2.683 / kT) * xnfp
+           call print_pop('CI'//str(i), c1pop(i, :) / xnatom(1 : nrhox))
+
+         enddo
 
       end if
 
@@ -2395,6 +2375,7 @@
       subroutine fe1
 
       use nlte_module
+      use string_operations
 
       implicit none
 
@@ -2477,6 +2458,12 @@
 !      probability (g * exp(...)) * state population (cm^-3) / partition function (xnfp)
        forall(j=1:nrhox)fe1pop(:,j)=g(:)*exp(-e(:)*c*hkt(j))*xnfpfe(j,1)
 
+       do i = 1, 5
+
+         call print_pop('FeI'//str(i), fe1pop(i, :) / xnatom(1 : nrhox))
+
+       enddo
+
       end if
 
 !     cross-sections
@@ -2525,7 +2512,7 @@
 
       enddo
 
-      end
+      end subroutine fe1
 
 
       subroutine mg1
@@ -2533,9 +2520,9 @@
       use nlte_module
 
       implicit none
-*
+
 *.... CROSS-SECTION TIMES THE PARTITION FUNCTION
-*
+
 
 *.... 1995 OCT - TEST n .le. 7 BEFORE freq .le. freqmg TO AVOID AN ARRAY
 *                OUT OF BOUNDS
@@ -2547,6 +2534,7 @@
       include 'common.rhoxbl'
       include 'common.tempbl'
       include 'common.xnfpbl'
+      include 'common.stateb'
 
 *---------------------------- LOCAL VARIABLES  ------------------------
 
@@ -2558,7 +2546,9 @@
 
       integer :: j
 
-      real*8 :: cs, stim_nlte, ltepop, mg1op_lte, mg1em
+      real*8, dimension(nrhox) :: ltepop
+
+      real*8 :: cs, stim_nlte, mg1op_lte, mg1em
 
 *------------------------------ INITIALIZATION ------------------------
 
@@ -2637,16 +2627,16 @@
           cs = exp(x(n) * (1.0d0 - dt(j)) + x(n + 1) * dt(j))
 
 !         probability (1.0) * state population (cm^-3) / partition function (xnfpmg(j, 1))
-          ltepop = xnfpmg(j, 1) ! statistical weight of the level in question is 1 (see datom.inp)
+          ltepop(j) = xnfpmg(j, 1) ! statistical weight of the level in question is 1 (see datom.inp)
 
 !         LTE opacity
-          mg1op_lte = ltepop * cs * stim(j)
+          mg1op_lte = ltepop(j) * cs * stim(j)
 
 !         stimulated emission factor in NLTE case
           stim_nlte = 1.0d0 - bMg(2, 1, j) * ehvkt(j) / bMg(1, 1, j)
 
 !         NLTE opacity
-          mg1op(j) = bMg(1, 1, j) * ltepop * cs * stim_nlte
+          mg1op(j) = bMg(1, 1, j) * ltepop(j) * cs * stim_nlte
 
 !         NLTE emissivity
           mg1em = bMg(2, 1, j) * mg1op_lte * bnu(j)
@@ -2655,6 +2645,8 @@
           smg1(j) = mg1em / mg1op(j)
 
       enddo
+
+      call print_pop('MgI1', ltepop / xnatom(1 : nrhox))
 
       end subroutine mg1
 
@@ -3409,56 +3401,59 @@
       seaton = xsect * (a + (1.0d0 - a) * (freq0 / freq)) *
      &         sqrt((freq0 / freq) ** (int(2.0d0 * power + 0.01d0)))
       end
-*
+
 *************** E N D   O F   F U N C T I O N   S E A T O N ************
-*
+
       subroutine si1
 
       use nlte_module
 
       implicit none
-*
+
 *.... CROSS-SECTION TIMES THE PARTITION FUNCTION
-*
+
 *.... 1995 OCT - TEST n .le. 9 BEFORE freq .le. freqsi TO AVOID AN ARRAY
 *                OUT OF BOUNDS
 *.... 1996 JAN - SAVED ALL RELEVANT LOCAL VARIABLES
-*
-*---------------------------- LOCAL VARIABLES --------------------------
-*
-      integer :: j
 
-      real*8 :: cs, stim_nlte, ltepop, si1op_lte, si1em
-*
 *-------------------------------- COMMONS -----------------------------
-*
+
       include 'common.sizebl'
       include 'common.freqbl'
       include 'common.rhoxbl'
       include 'common.tempbl'
       include 'common.xnfpbl'
-*
-*---------------------------- LOCAL VARIABLES  ------------------------
-*
+      include 'common.stateb'
+
+*---------------------------- LOCAL VARIABLES --------------------------
+
+      integer :: j
+
+      real*8, dimension(nrhox) :: ltepop
+
+      real*8  :: cs, stim_nlte, si1op_lte, si1em
+
       double precision  d, d1, dt(maxd), flog(11), freq1, freqsi(9), 
      &                  peach(9, 19), tlg(9), x(9)
+
       integer  it, itemp1, k, n, nt(maxd)
+
       save     dt, flog, freq1, freqsi, peach, tlg, x, itemp1, nt
-*
+
 *------------------------------ INITIALIZATION ------------------------
-*
+
       data freq1, itemp1 / 0.0d0, 0 /
 *
       data flog / 35.45438, 35.30022, 35.21799, 35.11986, 34.95438,
      &            33.95402, 33.90947, 33.80244, 33.78835, 33.76626,
      &            33.70518 /
-*
+
 *.... 3P, 1D, 1S, 1D, 3D, 3F, 1D, 3P
-*
+
       data freqsi / 2.1413750d15, 1.9723165d15, 1.7879689d15,
      &              1.5152920d15, 5.5723927d14, 5.3295914d14,
      &              4.7886458d14, 4.7216422d14, 4.6185133d14 /
-*
+
       data peach /
 *....     4000   5000   6000   7000   8000   9000   10000  11000  12000  WAVE(A)
      &   38.136,38.138,38.140,38.141,38.143,38.144,38.144,38.145,38.145,  1200
@@ -3483,9 +3478,9 @@
 
       data tlg / 8.29405, 8.51719, 8.69951, 8.85367, 8.98720, 9.10498,
      &           9.21034, 9.30565, 9.39266 /
-*
+
 *------------------------------- EXECUTION ----------------------------
-*
+
       if (itemp .ne. itemp1) then
 
          freq1  = 0.0d0
@@ -3528,16 +3523,16 @@
           cs = exp(-(x(n) * (1.0 - dt(j)) + x(n + 1) * dt(j)))
 
 !         probability (9.0) * state population (cm^-3) / partition function (xnfpsi(j, 1))
-          ltepop = 9.0d0 * xnfpsi(j, 1) ! statistical weight of the level in question is 9 (see datom.inp)
+          ltepop(j) = 9.0d0 * xnfpsi(j, 1) ! statistical weight of the level in question is 9 (see datom.inp)
 
 !         LTE opacity
-          si1op_lte = ltepop * cs * stim(j)
+          si1op_lte = ltepop(j) * cs * stim(j)
 
 !         stimulated emission factor in NLTE case
           stim_nlte = 1.0d0 - bSi(2, 1, j) * ehvkt(j) / bSi(1, 1, j)
 
 !         NLTE opacity
-          si1op(j) = bSi(1, 1, j) * ltepop * cs * stim_nlte
+          si1op(j) = bSi(1, 1, j) * ltepop(j) * cs * stim_nlte
 
 !         NLTE emissivity
           si1em = bSi(2, 1, j) * si1op_lte * bnu(j)
@@ -3547,7 +3542,9 @@
 
       enddo
 
-      end
+      call print_pop('SiI1', ltepop / xnatom(1 : nrhox))
+
+      end subroutine si1
 
 *
 *************** E N D   O F   F U N C T I O N   S I 1 O P **************

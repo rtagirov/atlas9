@@ -69,41 +69,6 @@
         character*10 int2str
         write(int2str,'(i10)') X
       end function int2str
-
-      ! returns a free fileunit
-      ! not threadsafe
-      function get_file_unit(s)
-
-      integer, optional :: s
-
-      integer :: get_file_unit
-
-      integer :: i, i0
-
-      logical :: taken
-
-      i0 = 100
-
-      if (present(s)) i0 = s
-
-      do i = i0, 90000
-
-         inquire(unit = i, opened = taken)
-
-         if (.not. taken) then
-
-            get_file_unit = i
-
-            return
-
-         endif
-
-      enddo
-
-      call error('atlas9.util.F: function get_file_unit:
-     $            no free unit found. abort.')
-
-      end function get_file_unit
       
       !*** Copy a file from FROMFILE to TOFILE using the opional OPTS
       !*** and set the returnstatus to the opional status

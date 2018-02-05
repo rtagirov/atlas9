@@ -1131,16 +1131,15 @@ c	       print *, ' *** Model ', imod
 
                end if
 
-               call system('rm -vf hydpops.out')
-               call system('rm -vf hminus.out')
+               call mkdir(ltepop_dir); call clean_dir(ltepop_dir)
 
                call nlte_elem(nrhox)
 
-               if (.not. any(nlte)) then ! LTE ELECTRON CONCENTRATION
+               if (.not. any(nlte)) then ! LTE electron concentration
 
                    call pops(0.0d0, 1, xne)
 
-               else ! READ NLTE ELECTRON CONCENTRATION AND ALL RELEVANT NLTE DEPARTURES
+               else ! read nlte electron concentration and all relevant nlte departures
 
                    call nlte_depart(nrhox)
 
