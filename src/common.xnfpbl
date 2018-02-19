@@ -1,11 +1,12 @@
 *....
-      common / xnfpbl/ xnfpal, xnfpb,  xnfpc, xnfpca, xnfpch, xnfpfe, 
-     &                 xnfpk,  xnfpmg, xnfpn, xnfpna, xnfpne, xnfpo, 
+      common / xnfpbl/ xnfpal, xnfpb,  xnfpc, xnfpca, xnfpch, xnfpfe,
+     &                 xnfpk,  xnfpmg, xnfpn, xnfpna, xnfpne, xnfpo,
      &                 xnfpoh, xnfpsi
-      double precision xnfpal(maxd, 2), xnfpb(maxd, 1),  xnfpc(maxd, 4),  
-     &                 xnfpca(maxd, 2), xnfpch(maxd),   xnfpfe(maxd, 1), 
-     &                 xnfpk(maxd, 1),  xnfpmg(maxd, 2), xnfpn(maxd, 5),  
-     &                 xnfpna(maxd, 1), xnfpne(maxd, 6), xnfpo(maxd, 6),  
+      double precision xnfpal(maxd, 2), xnfpb(maxd, 1),  xnfpc(maxd, 4),
+!     &                 xnfpca(maxd, 2), xnfpch(maxd),   xnfpfe(maxd, 1),
+     &                 xnfpca(maxd, 2), xnfpch(maxd),   xnfpfe(maxd, 2),
+     &                 xnfpk(maxd, 1),  xnfpmg(maxd, 2), xnfpn(maxd, 5),
+     &                 xnfpna(maxd, 1), xnfpne(maxd, 6), xnfpo(maxd, 6),
      &                 xnfpoh(maxd),   xnfpsi(maxd, 2)
 *
 ***************** E N D  O F   C O M M O N   X N F P B L *****************

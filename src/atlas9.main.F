@@ -54,10 +54,6 @@
 
       include 'common.odfnlt'
 
-     
-
-
-
       include 'common.sizebl'
       include 'common.constb'
 
@@ -1131,7 +1127,19 @@ c	       print *, ' *** Model ', imod
 
                end if
 
+               call read_datom('full',!)
+     $                          Nnlte,
+     $                          Znlte,
+     $                          Gnlte,
+     $                          Enlte,
+     $                          NAnlte,
+     $                          nfir,
+     $                          nlas)
+
                call mkdir(ltepop_dir); call clean_dir(ltepop_dir)
+
+!               allocate(xnfal(nrhox, 6))
+               allocate(xnfal(maxd, 6))
 
                call nlte_elem(nrhox)
 
@@ -1139,7 +1147,7 @@ c	       print *, ' *** Model ', imod
 
                    call pops(0.0d0, 1, xne)
 
-               else ! read nlte electron concentration and all relevant nlte departures
+               else ! read nlte electron concentration and all nlte departures specified in datom.inp
 
                    call nlte_depart(nrhox)
 
@@ -1152,10 +1160,12 @@ c	       print *, ' *** Model ', imod
                call pops( 8.05d0, 11, xnfpo)
                call pops(10.05d0, 11, xnfpne)
                call pops(12.01d0, 11, xnfpmg)
-               call pops(13.00d0, 11, xnfpal)
+!               call pops(13.00d0, 11, xnfpal)
+               call pops(13.01d0, 11, xnfpal)
                call pops(14.01d0, 11, xnfpsi)
                call pops(20.01d0, 11, xnfpca)
-               call pops(26.00d0, 11, xnfpfe)
+!               call pops(26.00d0, 11, xnfpfe)
+               call pops(26.01d0, 11, xnfpfe)
 
                if (.not. ifmol) then
 
@@ -1183,6 +1193,9 @@ c	       print *, ' *** Model ', imod
                   call pops( 8.05d0, 11, xnfo)
                   call pops(10.05d0, 11, xnfne)
                   call pops(12.05d0, 11, xnfmg)
+
+                  call pops(13.05d0, 11, xnfal)
+
                   call pops(14.05d0, 11, xnfsi)
                   call pops(16.05d0, 11, xnfs)
                   call pops(26.04d0, 11, xnffe)
@@ -1237,6 +1250,14 @@ c	       print *, ' *** Model ', imod
                      xnfmg(j, 4) = xnfmg(j, 4) * part(j, 4)
                      xnfmg(j, 5) = xnfmg(j, 5) * part(j, 5)
                      xnfmg(j, 6) = xnfmg(j, 6) * part(j, 6)
+*
+                     call pfsaha(j, 13, 6, 13, part)
+                     xnfal(j, 1) = xnfal(j, 1) * part(j, 1)
+                     xnfal(j, 2) = xnfal(j, 2) * part(j, 2)
+                     xnfal(j, 3) = xnfal(j, 3) * part(j, 3)
+                     xnfal(j, 4) = xnfal(j, 4) * part(j, 4)
+                     xnfal(j, 5) = xnfal(j, 5) * part(j, 5)
+                     xnfal(j, 6) = xnfal(j, 6) * part(j, 6)
 *
                      call pfsaha(j, 14, 6, 13, part)
                      xnfsi(j, 1) = xnfsi(j, 1) * part(j, 1)

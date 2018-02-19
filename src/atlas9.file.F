@@ -14,6 +14,8 @@
 
       character (len=8), parameter :: nltepop_dir  = 'nltepop/'
 
+!      character (len=5), parameter :: nist_dir    = 'NIST/'
+
       public
 
       contains
@@ -59,40 +61,40 @@
       END SUBROUTINE
 
       ! returns a free file unit; not threadsafe
-      function get_file_unit(s)
+!      function get_file_unit(s)
 
-      use utils
+!      use utils
 
-      integer, optional :: s
+!      integer, optional :: s
 
-      integer :: get_file_unit
+!      integer :: get_file_unit
 
-      integer :: i, i0
+!      integer :: i, i0
 
-      logical :: taken
+!      logical :: taken
 
-      i0 = 100
+!      i0 = 100
 
-      if (present(s)) i0 = s
+!      if (present(s)) i0 = s
 
-      do i = i0, 90000
+!      do i = i0, 90000
 
-         inquire(unit = i, opened = taken)
+!         inquire(unit = i, opened = taken)
 
-         if (.not. taken) then
+!         if (.not. taken) then
 
-            get_file_unit = i
+!            get_file_unit = i
 
-            return
+!            return
 
-         endif
+!         endif
 
-      enddo
+!      enddo
 
-      call error('atlas9.util.F: function get_file_unit:
-     $            no free unit found. abort.')
+!      call error('atlas9.util.F: function get_file_unit:
+!     $            no free unit found. abort.')
 
-      end function get_file_unit
+!      end function get_file_unit
 
       subroutine open_to_append(file_unit, file_name)
 

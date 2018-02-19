@@ -67,34 +67,32 @@
 *
       do i = 1, 37
 
-         do  j = 1, nrhox
-            dummy(j, i) = 0.0d0
-         end do
+         forall (j = 1 : nrhox) dummy(j, i) = 0.0d0
 
-      end do
+      enddo
 
       if (.not. allocated(acool_ato)) allocate(acool_ato(nrhox))
       if (.not. allocated(acool_mol)) allocate(acool_mol(nrhox))
 
-      if (.not. allocated(al1op)) allocate(al1op(nrhox))
-      if (.not. allocated(mg1op)) allocate(mg1op(nrhox))
-      if (.not. allocated(si1op)) allocate(si1op(nrhox))
-      if (.not. allocated(c1op )) allocate(c1op (nrhox))
-      if (.not. allocated(fe1op)) allocate(fe1op(nrhox))
+      if (.not. allocated(opAlI)) allocate(opAlI(nrhox))
+      if (.not. allocated(opMgI)) allocate(opMgI(nrhox))
+      if (.not. allocated(opSiI)) allocate(opSiI(nrhox))
+      if (.not. allocated(opCI )) allocate(opCI (nrhox))
+      if (.not. allocated(opFeI)) allocate(opFeI(nrhox))
 
-      if (.not. allocated(sal1)) allocate(sal1(nrhox))
-      if (.not. allocated(smg1)) allocate(smg1(nrhox))
-      if (.not. allocated(ssi1)) allocate(ssi1(nrhox))
-      if (.not. allocated(sc1 )) allocate(sc1 (nrhox))
-      if (.not. allocated(sfe1)) allocate(sfe1(nrhox))
+      if (.not. allocated(sAlI)) allocate(sAlI(nrhox))
+      if (.not. allocated(sMgI)) allocate(sMgI(nrhox))
+      if (.not. allocated(sSiI)) allocate(sSiI(nrhox))
+      if (.not. allocated(sCI )) allocate(sCI (nrhox))
+      if (.not. allocated(sFeI)) allocate(sFeI(nrhox))
 
       acool_ato = 0.0d0; acool_mol = 0.0d0
                      
-      al1op = 0.0d0; sal1 = 0.0d0
-      mg1op = 0.0d0; smg1 = 0.0d0
-      si1op = 0.0d0; ssi1 = 0.0d0
-      c1op  = 0.0d0; sc1  = 0.0d0
-      fe1op = 0.0d0; sfe1 = 0.0d0
+      opAlI = 0.0d0; sAlI = 0.0d0
+      opMgI = 0.0d0; sMgI = 0.0d0
+      opSiI = 0.0d0; sSiI = 0.0d0
+      opCI  = 0.0d0; sCI  = 0.0d0
+      opFeI = 0.0d0; sFeI = 0.0d0
 
       if (ifop(1)) call hop
       if (ifop(2) .and. freq .le. 3.28805d15) call h2plop
@@ -130,22 +128,22 @@
      $                                        ahyd(j)   * shyd(j)   +
      &                                        ahmin(j)  * shmin(j)  +
      $                                        axcont(j) * sxcont(j) +
-     $                                        al1op(j)  * sal1(j)   +
-     $                                        mg1op(j)  * smg1(j)   +
-     $                                        si1op(j)  * ssi1(j)   +
-     $                                        c1op(j)   * sc1(j)    +
-     $                                        fe1op(j)  * sfe1(j))  /
+     $                                        opAlI(j)  * sAlI(j)   +
+     $                                        opMgI(j)  * sMgI(j)   +
+     $                                        opSiI(j)  * sSiI(j)   +
+     $                                        opCI(j)   * sCI(j)    +
+     $                                        opFeI(j)  * sFeI(j))  /
      &                                        acont(j)
 
          sigmac(j) = sigh(j) + sighe(j) + sigel(j) + sigh2(j) + sigx(j)
 
       enddo
 
-      deallocate(al1op, sal1)
-      deallocate(mg1op, smg1)
-      deallocate(si1op, ssi1)
-      deallocate(c1op , sc1 )
-      deallocate(fe1op, sfe1)
+      deallocate(opAlI, sAlI)
+      deallocate(opMgI, sMgI)
+      deallocate(opSiI, sSiI)
+      deallocate(opCI , sCI )
+      deallocate(opFeI, sFeI)
 
       end subroutine kapp
 
@@ -1575,13 +1573,13 @@
 
       do j = 1, nrhox; acool_mol(j) = chop(j) + ohop(j); enddo
 
-      call al1
-      call mg1
-      call si1
-      call c1
-      call fe1
+      call AlI
+      call MgI
+      call SiI
+      call CI
+      call FeI
 
-      acool_ato = al1op + mg1op + si1op + c1op + fe1op
+      acool_ato = opAlI + opMgI + opSiI + opCI + opFeI
 
       acool_mol = acool_mol / rho(1 : nrhox)
       acool_ato = acool_ato / rho(1 : nrhox)
@@ -1589,9 +1587,11 @@
       end subroutine coolop
 
 
-      subroutine al1
+      subroutine AlI
 
+      use phys
       use nlte_module
+      use string_operations
 
       implicit none
 
@@ -1604,51 +1604,104 @@
       include 'common.rhoxbl'
       include 'common.xnfpbl'
       include 'common.stateb'
+      include 'common.tempbl'
 
 *--------------------------------- LOCAL VARIABLES ----------------------
 
-      integer :: j
+      integer                              :: itemp1
 
-      real*8, dimension(nrhox) :: ltepop
+      integer                              :: i, j
 
-      real*8 :: cs, stim_nlte, al1op_lte, al1em
+      real*8, dimension(nrhox)             :: kT
+
+      real*8, allocatable, dimension(:)    :: pAlI
+
+      real*8, allocatable, dimension(:, :) :: pAlII
+
+      integer, allocatable, dimension(:)   :: lAlI, lAlII
+
+!      real*8, dimension(1)                 :: e, g
+
+      real*8                               :: cs, stim_nlte
+
+      real*8                               :: opAlI_lte, emAlI
+
+      save                                    pAlI, pAlII, itemp1
+
+*----------------------------- INITIALIZATION --------------------------
+
+!      data e / 0.009d0 / ! level energy in eV
+!      data g / 6.000d0 / ! statistical weight
+
+      cs = 0.0d0
 
 *------------------------------- EXECUTION -----------------------------
 
-      cs = 0.0d0
+      if (itemp .ne. itemp1) then
+
+         itemp1 = itemp
+
+         call find_lev_nums('Al', 'I',  lAlI)
+         call find_lev_nums('Al', 'II', lAlII)
+
+         if (.not. allocated(pAlI))  allocate(pAlI(nrhox))
+         if (.not. allocated(pAlII)) allocate(pAlII(nlev(13, 2), nrhox))
+
+         kT = tkev(1 : nrhox)
+
+!        LTE populations
+         pAlI = Gnlte(lAlI(1)) *
+     $          dexp(-Enlte(lAlI(1)) * rcm2eV / kT) *
+     $          xnfpal(1 : nrhox, 1)
+
+         do i = 1, nlev(13, 2)
+
+            pAlII(i, :) = Gnlte(lAlII(i)) *
+     $                    dexp(-Enlte(lAlII(i)) * rcm2eV / kT) *
+     $                    xnfpal(1 : nrhox, 2)
+
+!            pAlII(i, :) = xnfal(1 : nrhox, 2) / xnatom(1 : nrhox)
+
+         enddo
+
+         call print_pop('AlI1', pAlI / xnatom(1 : nrhox))
+
+         do i = 1, nlev(13, 2)
+
+         call print_pop('AlII'//str(i), pAlII(i, :) / xnatom(1 : nrhox))
+
+         enddo
+
+      endif
 
 !     cross-section
       if (freq .ge. 1.443d15) cs = 6.5d-17 * (1.443d15 / freq)**5
 
       do j = 1, nrhox
 
-!         probability (6.0) * state population (cm^-3) / partition function (xnfpal(j, 1))
-          ltepop(j) = 6.0d0 * xnfpal(j, 1) ! statistical weight of the level in question is 6 (see datom.inp)
-
 !         LTE opacity
-          al1op_lte =  ltepop(j) * cs * stim(j)
+          opAlI_lte =  pAlI(j) * cs * stim(j)
 
 !         stimulated emission factor in NLTE case
           stim_nlte = 1.0d0 - bAl(2, 1, j) * ehvkt(j) / bAl(1, 1, j)
 
 !         NLTE opacity
-          al1op(j) = bAl(1, 1, j) * ltepop(j) * cs * stim_nlte
+          opAlI(j) = bAl(1, 1, j) * pAlI(j) * cs * stim_nlte
 
 !         NLTE emissivity
-          al1em = bAl(2, 1, j) * al1op_lte * bnu(j)
+          emAlI = bAl(2, 1, j) * opAlI_lte * bnu(j)
 
 !         source function
-          sal1(j) = al1em / al1op(j)
+          sAlI(j) = emAlI / opAlI(j)
 
       enddo
 
-      call print_pop('AlI1', ltepop / xnatom(1 : nrhox))
-
-      end subroutine al1
+      end subroutine AlI
 
 
-      subroutine c1
+      subroutine CI
 
+      use phys
       use nlte_module
       use string_operations
 
@@ -1662,24 +1715,29 @@
       include 'common.freqbl'
       include 'common.rhoxbl'
       include 'common.tempbl'
-      include 'common.xnfpbl'
       include 'common.stateb'
+      include 'common.xnfpbl'
+
+      include 'common.xnfblk'
 
 *---------------------------- LOCAL VARIABLES  ------------------------
 
-      real*8, allocatable, dimension(:, :) :: c1pop
+      real*8,  allocatable, dimension(:, :) :: pCI, pCII
 
-      real*8, allocatable, dimension(:)    :: c1cs
+      real*8,  allocatable, dimension(:)    :: csCI
 
-      real*8, dimension(nrhox)             :: xnfp, kT
+      integer, allocatable, dimension(:)    :: lCI, lCII
 
-      real*8, dimension(3)                 :: stim_nlte, e, g
+      real*8, dimension(nrhox)              :: kT
 
-      real*8                               :: c1op_lte, c1em
+!      real*8, dimension(3)                  :: stim_nlte, e, g
+      real*8, dimension(3)                  :: stim_nlte
 
-      real*8                               :: freq1, seaton
+      real*8                                :: opCI_lte, emCI
 
-      integer                              :: itemp1, i, j
+      real*8                                :: freq1, seaton
+
+      integer                               :: itemp1, i, j
 
 *---------------------------- EXTERNAL ---------------------------------
 
@@ -1687,13 +1745,14 @@
 
 *------------------------------ INITIALIZATION ------------------------
 
-      save c1pop, c1cs, freq1, itemp1
+!      save popCI, popCII, csCI, freq1, itemp1, lCI, lCII
+      save pCI, pCII, csCI, freq1, itemp1
 
       data freq1, itemp1 / 0.0d0, 0 /
 
 !     first 3 multiplets of CI
-      data e / 0.0d0, 1.264, 2.684 / ! level energies in eV
-      data g / 9.0d0, 5.0d0, 1.0d0 / ! statistical weights
+!      data e / 0.004d0, 1.264d0, 2.684d0 / ! level energies in eV
+!      data g / 9.000d0, 5.000d0, 1.000d0 / ! statistical weights
 
 *------------------------------- EXECUTION ----------------------------
 
@@ -1702,17 +1761,17 @@
 
          freq1 = freq
 
-         if (.not. allocated(c1cs)) allocate(c1cs(3))
+         if (.not. allocated(csCI)) allocate(csCI(3))
 
-         c1cs = 0.0d0
+         csCI = 0.0d0
 
-         if (freq .ge. 2.7254d15) c1cs(1) = seaton(2.7254d15, 1.219d-17,
+         if (freq .ge. 2.7254d15) csCI(1) = seaton(2.7254d15, 1.219d-17,
      &                                             2.0d0, 3.317d0)
 
-         if (freq .ge. 2.4196d15) c1cs(2) = seaton(2.4196d15, 1.03d-17,
+         if (freq .ge. 2.4196d15) csCI(2) = seaton(2.4196d15, 1.03d-17,
      &                                             1.5d0, 2.789d0)
 
-         if (freq .ge. 2.0761d15) c1cs(3) = seaton(2.0761d15, 9.59d-18,
+         if (freq .ge. 2.0761d15) csCI(3) = seaton(2.0761d15, 9.59d-18,
      &                                             1.5d0, 3.501d0)
 
       endif
@@ -1721,46 +1780,68 @@
 
          itemp1 = itemp
 
-         if (.not. allocated(c1pop)) allocate(c1pop(3, nrhox))
+         call find_lev_nums('C', 'I',  lCI )
+         call find_lev_nums('C', 'II', lCII)
 
-         c1pop = 0.0d0
-
-         xnfp = xnfpc(1 : nrhox, 1)
+         if (.not. allocated(pCI))  allocate(pCI(3,           nrhox))
+         if (.not. allocated(pCII)) allocate(pCII(nlev(6, 2), nrhox))
 
          kT = tkev(1 : nrhox)
 
 !        LTE populations (first 3 multiplets of CI)
-!        probability (g * exp(...)) * state population (cm^-3) / partition function (xnfp)
-         forall(i = 1 : 3) c1pop(i, :) = g(i) * exp(-e(i) / kT) * xnfp
-
+!        probability (g * exp(...)) * state population (cm^-3) / partition function (xnfpc)
          do i = 1, 3
 
-           call print_pop('CI'//str(i), c1pop(i, :) / xnatom(1 : nrhox))
+            pCI(i, :) = Gnlte(lCI(i)) *
+     $                  dexp(-Enlte(lCI(i)) * rcm2eV / kT) *
+     $                  xnfpc(1 : nrhox, 1)
 
          enddo
 
-      end if
+         do i = 1, nlev(6, 2)
+
+            pCII(i, :) = Gnlte(lCII(i)) *
+     $                   dexp(-Enlte(lCII(i)) * rcm2eV / kT) *
+     $                   xnfpc(1 : nrhox, 2)
+
+!            pCII(i, :) = xnfc(1 : nrhox, 2) / xnatom(1 : nrhox)
+
+         enddo
+
+         do i = 1, 3
+
+          call print_pop('CI'//str(i), pCI(i, :) / xnatom(1 : nrhox))
+
+         enddo
+
+         do i = 1, nlev(6, 2)
+
+         call print_pop('CII'//str(i), pCII(i, :) / xnatom(1 : nrhox))
+
+         enddo
+
+      endif
 
       do j = 1, nrhox
 
 !        LTE opacity
-         c1op_lte = sum(c1pop(:, j) * c1cs) * stim(j)
+         opCI_lte = sum(pCI(:, j) * csCI) * stim(j)
 
 !        stimulated emission factor in NLTE case
          stim_nlte = 1.0d0 - bC(2, 1, j) * ehvkt(j) / bC(1, 1 : 3, j)
 
 !        NLTE opacity
-         c1op(j) = sum(bC(1, 1 : 3, j) * c1pop(:, j) * c1cs * stim_nlte)
+         opCI(j) = sum(bC(1, 1 : 3, j) * pCI(:, j) * csCI * stim_nlte)
 
 !        NLTE emissivity
-         c1em = bC(2, 1, j) * c1op_lte * bnu(j)
+         emCI = bC(2, 1, j) * opCI_lte * bnu(j)
 
 !        source function
-         sc1(j) = c1em / c1op(j)
+         sCI(j) = emCI / opCI(j)
 
       enddo
 
-      end subroutine c1
+      end subroutine CI
 
 
       double precision function chop(j)
@@ -2372,7 +2453,7 @@
 
 *************** E N D   O F   F U N C T I O N   C H O P ****************
 
-      subroutine fe1
+      subroutine FeI
 
       use nlte_module
       use string_operations
@@ -2390,25 +2471,35 @@
       include 'common.stateb'
       include 'common.xnfpbl'
 
+      include 'common.xnfblk'
+
 *----------------------------- LOCAL VARIABLES -------------------------
 
-      real*8, allocatable, dimension(:, :) :: fe1pop
+      real*8,  allocatable, dimension(:, :) :: pFeI, pFeII
 
-      real*8, allocatable, dimension(:)    :: fe1cs
+      real*8,  allocatable, dimension(:)    :: csFeI
 
-      real*8, dimension(48)                :: e, g, wno, stim_nlte
+      real*8,  allocatable, dimension(:)    :: gFeI, eFeI, gFeII, eFeII
 
-      real*8                               :: freq1, fe1op_lte, fe1em
+      real*8,  dimension(48)                :: e, g, wno, stim_nlte
 
-      integer                              :: i, j, itemp1
+      real*8                                :: freq1, opFeI_lte, emFeI
+
+      integer                               :: i, j, itemp1
+
+      integer, allocatable, dimension(:)    :: lFeI, lFeII
 
 *----------------------------- PARAMETERS ------------------------------
 
-      real*8, parameter                    :: c = 2.99792458d10
+      real*8, parameter                     :: c = 2.99792458d10
 
 *----------------------------- INITIALIZATION --------------------------
 
-      save fe1pop, fe1cs, freq1, itemp1
+      save pFeI, pFeII, csFeI, freq1, itemp1
+
+!      save gFeI, eFeI, gFeII, eFeII
+
+!      save lFeI, lFeII
 
       data itemp1 / 0 /, freq1 / 0.0d0 /
 
@@ -2434,7 +2525,7 @@
      &              15.0,    21.0,    15.0,    25.0,    21.0,    35.0,
      &               5.0,    15.0,    45.0,    35.0,    55.0,    25.0 /
 
-!     wave numbers
+!     wave numbers (?)
       data wno / 63500.0, 58500.0, 53500.0, 59500.0, 45000.0, 44500.0,
      &           44500.0, 43000.0, 58000.0, 41000.0, 54000.0, 40000.0,
      &           40000.0, 57500.0, 55500.0, 38000.0, 57500.0, 57500.0,
@@ -2446,25 +2537,79 @@
 
 *------------------------------- EXECUTION -----------------------------
 
+!      write(*, '(F9.5,2x,I2,2(2x,F9.5))') (g(j),
+!     $                                     g_nist(j),
+!     $                                     e(j),
+!     $                                     e_nist(j), j = 1, 48)
+
+!      do j = 1, 48
+
+!      write(*, '(I2,2x,I2,2(2x,F11.3))') idint(g(j)), g_nist(j),
+!     $                                   e(j), e_nist(j)
+
+!      enddo
+
+!      stop
+
       if (itemp .ne. itemp1) then
 
        freq1  = 0.0d0
 
        itemp1 = itemp
 
-       if (.not. allocated(fe1pop)) allocate(fe1pop(48, nrhox))
+       call read_nist('FeI.NIST.dat', gFeI, eFeI)
+
+       call find_lev_nums('Fe', 'I',  lFeI )
+       call find_lev_nums('Fe', 'II', lFeII)
+
+       if (.not. allocated(pFeI))  allocate(pFeI(48,           nrhox))
+       if (.not. allocated(pFeII)) allocate(pFeII(nlev(26, 2), nrhox))
 
 !      LTE populations (first 48 multiplets of FeI)
 !      probability (g * exp(...)) * state population (cm^-3) / partition function (xnfp)
-       forall(j=1:nrhox)fe1pop(:,j)=g(:)*exp(-e(:)*c*hkt(j))*xnfpfe(j,1)
+       do j = 1, nrhox
 
-       do i = 1, 5
+         do i = 1, nlev(26, 1)
 
-         call print_pop('FeI'//str(i), fe1pop(i, :) / xnatom(1 : nrhox))
+            if (j == 1) print*, lFeI(i), Gnlte(lFeI(i)), Enlte(lFeI(i))
+
+            pFeI(i, j) = Gnlte(lFeI(i)) * dexp(-Enlte(lFeI(i))*c*hkt(j))
+     $                                  * xnfpfe(j, 1)
+
+         enddo
+
+         do i = nlev(26, 1) + 1, 48
+
+           pFeI(i, j) = gFeI(i) * dexp(-eFeI(i)*c*hkt(j)) * xnfpfe(j, 1)
+
+         enddo
+
+         do i = 1, nlev(26, 2)
+
+            if (j == 1) print*, lFeII(i),Gnlte(lFeII(i)),Enlte(lFeII(i))
+
+            pFeII(i,j)=Gnlte(lFeII(i))*dexp(-Enlte(lFeII(i))*c*hkt(j))
+     $                                *xnfpfe(j, 2)
+
+!            pFeII(i, j) = xnffe(j, 2)
+
+         enddo
 
        enddo
 
-      end if
+       do i = 1, nlev(26, 1)
+
+        call print_pop('FeI'//str(i),  pFeI(i, :) / xnatom(1 : nrhox))
+
+       enddo
+
+       do i = 1, nlev(26, 2)
+
+        call print_pop('FeII'//str(i), pFeII(i, :) / xnatom(1 : nrhox))
+
+       enddo
+
+      endif
 
 !     cross-sections
       if (freq .ne. freq1) then
@@ -2473,51 +2618,53 @@
 
          if (waveno .ge. 21000.0d0) then
 
-            if (.not. allocated(fe1cs)) allocate(fe1cs(48))
+            if (.not. allocated(csFeI)) allocate(csFeI(48))
 
             do i = 1, 48
 
-               fe1cs(i) = 0.0d0
+               csFeI(i) = 0.0d0
 
-               if (wno(i) .lt. waveno) fe1cs(i) =  3.0d-18 /
+               if (wno(i) .lt. waveno) csFeI(i) =  3.0d-18 /
      &            (1.0d0 + ((wno(i) + 3000.0d0 - waveno) /
      &            wno(i) / 0.1d0) ** 4)
 
             end do
 
-         end if
+         endif
 
-      end if
+      endif
 
       do j = 1, nrhox
 
-         fe1op(j) = 0.0d0
+         opFeI(j) = 0.0d0
 
          if (waveno .lt. 21000.0d0) cycle
 
 !        LTE opacity
-         fe1op_lte = sum(fe1pop(:, j) * fe1cs) * stim(j)
+         opFeI_lte = sum(pFeI(:, j) * csFeI) * stim(j)
 
 !        stimulated emission factor in NLTE case
          stim_nlte = 1.0d0 - bFe(2, 1, j) * ehvkt(j) / bFe(1, 1 : 48, j)
 
 !        NLTE opacity
-         fe1op(j) = sum(bFe(1, 1 : 48, j)*fe1pop(:, j)*fe1cs*stim_nlte)
+         opFeI(j) = sum(bFe(1, 1:48, j) * pFeI(:,j) * csFeI * stim_nlte)
 
 !        NLTE emissivity
-         fe1em = bFe(2, 1, j) * fe1op_lte * bnu(j)
+         emFeI = bFe(2, 1, j) * opFeI_lte * bnu(j)
 
 !        source function
-         sfe1(j) = fe1em / fe1op(j)
+         sFeI(j) = emFeI / opFeI(j)
 
       enddo
 
-      end subroutine fe1
+      end subroutine FeI
 
 
-      subroutine mg1
+      subroutine MgI
 
+      use phys
       use nlte_module
+      use string_operations
 
       implicit none
 
@@ -2533,22 +2680,35 @@
       include 'common.freqbl'
       include 'common.rhoxbl'
       include 'common.tempbl'
-      include 'common.xnfpbl'
       include 'common.stateb'
+      include 'common.xnfpbl'
+
+      include 'common.xnfblk'
 
 *---------------------------- LOCAL VARIABLES  ------------------------
 
-      double precision   d, d1, dt(maxd), flog(9), freq1, freqmg(7), 
-     &                   peach(7, 15), tlg(7), x(7)
+      double precision :: d, d1, dt(maxd), flog(9), freq1, freqmg(7),
+     &                    peach(7, 15), tlg(7), x(7)
 
-      integer  it, itemp1, k, n, nt(maxd)
-      save     dt, flog, freq1, freqmg, itemp1, nt, peach, tlg, x
+      integer                              :: it, itemp1, k, n, nt(maxd)
 
-      integer :: j
+      integer                              :: i, j
 
-      real*8, dimension(nrhox) :: ltepop
+      real*8, dimension(nrhox)             :: kT
 
-      real*8 :: cs, stim_nlte, mg1op_lte, mg1em
+      real*8, allocatable, dimension(:)    :: pMgI
+
+      real*8, allocatable, dimension(:, :) :: pMgII
+
+      integer, allocatable, dimension(:)   :: lMgI, lMgII
+
+      real*8                               :: cs, stim_nlte
+
+      real*8                               :: opMgI_lte, emMgI
+
+      save dt, flog, freq1, freqmg, itemp1, nt, peach, tlg, x,
+!     $     popMgI, popMgII, lMgI, lMgII
+     $     pMgI, pMgII
 
 *------------------------------ INITIALIZATION ------------------------
 
@@ -2591,23 +2751,54 @@
          freq1  = 0.0d0
          itemp1 = itemp
 
-         do k = 1, nrhox
-            n     = max( min(6, int(t(k) / 1000.0d0) -3) , 1)
-            nt(k) = n
-            dt(k) = (tlog(k) - tlg(n)) / (tlg(n + 1) - tlg(n))
-         end do
+         kT = tkev(1 : nrhox)
 
-      end if
+         call find_lev_nums('Mg', 'I',  lMgI)
+         call find_lev_nums('Mg', 'II', lMgII)
+
+         if (.not. allocated(pMgI))  allocate(pMgI(nrhox))
+         if (.not. allocated(pMgII)) allocate(pMgII(nlev(12, 2), nrhox))
+
+         do k = 1, nrhox
+
+            n     = max(min(6, int(t(k) / 1000.0d0) -3), 1)
+
+            nt(k) = n
+
+            dt(k) = (tlog(k) - tlg(n)) / (tlg(n + 1) - tlg(n))
+
+!           LTE populations
+            pMgI(k) = Gnlte(lMgI(1)) *
+     $                dexp(-Enlte(lMgI(1)) * rcm2eV / kT(k)) *
+     $                xnfpmg(k, 1)
+
+            do i = 1, nlev(12, 2)
+
+               pMgII(i, k) = Gnlte(lMgII(i)) *
+     $                       dexp(-Enlte(lMgII(i)) * rcm2eV / kT(k)) *
+     $                       xnfpmg(k, 2)
+
+            enddo
+
+         enddo
+
+         call print_pop('MgI1', pMgI / xnatom(1 : nrhox))
+
+         do i = 1, nlev(12, 2)
+
+           call print_pop('MgII'//str(i), pMgII(i, :) / xnatom(1:nrhox))
+
+         enddo
+
+      endif
 
       if (freq .ne. freq1) then
-         freq1   = freq
-         n       = 1
 
-*.... THIS LOOP RETURNS N <= 8
+         freq1 = freq
+         n     = 1
 
-         do while ( n .le. 7 .and. freq .le. freqmg(n))
-            n = n + 1
-         end do
+!        THIS LOOP RETURNS N <= 8
+         do while (n .le. 7 .and. freq .le. freqmg(n)); n = n + 1; enddo
 
          d = (freqln - flog(n)) / (flog(n + 1) - flog(n))
          if (n .gt. 2) n = 2 * n - 2
@@ -2615,9 +2806,9 @@
 
          do it = 1, 7
             x(it) = peach(it, n + 1) * d + peach(it, n) * d1
-         end do
+         enddo
 
-      end if
+      endif
 
       do j = 1, nrhox
 
@@ -2626,29 +2817,24 @@
 !         cross-section
           cs = exp(x(n) * (1.0d0 - dt(j)) + x(n + 1) * dt(j))
 
-!         probability (1.0) * state population (cm^-3) / partition function (xnfpmg(j, 1))
-          ltepop(j) = xnfpmg(j, 1) ! statistical weight of the level in question is 1 (see datom.inp)
-
 !         LTE opacity
-          mg1op_lte = ltepop(j) * cs * stim(j)
+          opMgI_lte = pMgI(j) * cs * stim(j)
 
 !         stimulated emission factor in NLTE case
           stim_nlte = 1.0d0 - bMg(2, 1, j) * ehvkt(j) / bMg(1, 1, j)
 
 !         NLTE opacity
-          mg1op(j) = bMg(1, 1, j) * ltepop(j) * cs * stim_nlte
+          opMgI(j) = bMg(1, 1, j) * pMgI(j) * cs * stim_nlte
 
 !         NLTE emissivity
-          mg1em = bMg(2, 1, j) * mg1op_lte * bnu(j)
+          emMgI = bMg(2, 1, j) * opMgI_lte * bnu(j)
 
 !         source function
-          smg1(j) = mg1em / mg1op(j)
+          sMgI(j) = emMgI / opMgI(j)
 
       enddo
 
-      call print_pop('MgI1', ltepop / xnatom(1 : nrhox))
-
-      end subroutine mg1
+      end subroutine MgI
 
 
       double precision function ohop(j)
@@ -3404,9 +3590,11 @@
 
 *************** E N D   O F   F U N C T I O N   S E A T O N ************
 
-      subroutine si1
+      subroutine SiI
 
+      use phys
       use nlte_module
+      use string_operations
 
       implicit none
 
@@ -3422,16 +3610,26 @@
       include 'common.freqbl'
       include 'common.rhoxbl'
       include 'common.tempbl'
-      include 'common.xnfpbl'
       include 'common.stateb'
+      include 'common.xnfpbl'
+
+      include 'common.xnfblk'
 
 *---------------------------- LOCAL VARIABLES --------------------------
 
-      integer :: j
+      integer                              :: i, j
 
-      real*8, dimension(nrhox) :: ltepop
+      real*8, allocatable, dimension(:)    :: pSiI
 
-      real*8  :: cs, stim_nlte, si1op_lte, si1em
+      real*8, allocatable, dimension(:, :) :: pSiII
+
+!      real*8, dimension(1)     :: e, g
+
+      integer, allocatable, dimension(:)   :: lSiI, lSiII
+
+      real*8                               :: cs, stim_nlte
+
+      real*8                               :: opSiI_lte, emSiI
 
       double precision  d, d1, dt(maxd), flog(11), freq1, freqsi(9), 
      &                  peach(9, 19), tlg(9), x(9)
@@ -3440,7 +3638,12 @@
 
       save     dt, flog, freq1, freqsi, peach, tlg, x, itemp1, nt
 
+      save     pSiI, pSiII
+
 *------------------------------ INITIALIZATION ------------------------
+
+!      data e / 0.018d0 / ! level energy in eV
+!      data g / 9.000d0 / ! statistical weight
 
       data freq1, itemp1 / 0.0d0, 0 /
 *
@@ -3486,13 +3689,44 @@
          freq1  = 0.0d0
          itemp1 = itemp
 
+         call find_lev_nums('Si', 'I',  lSiI)
+         call find_lev_nums('Si', 'II', lSiII)
+
+         if (.not. allocated(pSiI))  allocate(pSiI(nrhox))
+         if (.not. allocated(pSiII)) allocate(pSiII(nlev(14, 2), nrhox))
+
          do k = 1, nrhox
+
             n     = max(min(8, int(t(k) / 1000.0d0) -3) , 1)
             nt(k) = n
             dt(k) = (tlog(k) - tlg(n)) / (tlg(n + 1) - tlg(n))
-         end do
 
-      end if
+!           LTE populations
+            pSiI(k) = Gnlte(lSiI(1)) *
+     $                dexp(-Enlte(lSiI(1)) * rcm2eV / tkev(k)) *
+     $                xnfpsi(k, 1)
+
+            do i = 1, nlev(14, 2)
+
+               pSiII(i, k) = Gnlte(lSiII(i)) *
+     $                       dexp(-Enlte(lSiII(i)) * rcm2eV / tkev(k)) *
+     $                       xnfpsi(k, 2)
+
+!               pSiII(i, k) = xnfsi(k, 2)
+
+            enddo
+
+         enddo
+
+         call print_pop('SiI1', pSiI / xnatom(1 : nrhox))
+
+         do i = 1, nlev(14, 2)
+
+         call print_pop('SiII'//str(i), pSiII(i, :) / xnatom(1 : nrhox))
+
+         enddo
+
+      endif
 
       if (freq .ne. freq1) then
 
@@ -3522,29 +3756,24 @@
 !         cross-section
           cs = exp(-(x(n) * (1.0 - dt(j)) + x(n + 1) * dt(j)))
 
-!         probability (9.0) * state population (cm^-3) / partition function (xnfpsi(j, 1))
-          ltepop(j) = 9.0d0 * xnfpsi(j, 1) ! statistical weight of the level in question is 9 (see datom.inp)
-
 !         LTE opacity
-          si1op_lte = ltepop(j) * cs * stim(j)
+          opSiI_lte = pSiI(j) * cs * stim(j)
 
 !         stimulated emission factor in NLTE case
           stim_nlte = 1.0d0 - bSi(2, 1, j) * ehvkt(j) / bSi(1, 1, j)
 
 !         NLTE opacity
-          si1op(j) = bSi(1, 1, j) * ltepop(j) * cs * stim_nlte
+          opSiI(j) = bSi(1, 1, j) * pSiI(j) * cs * stim_nlte
 
 !         NLTE emissivity
-          si1em = bSi(2, 1, j) * si1op_lte * bnu(j)
+          emSiI = bSi(2, 1, j) * opSiI_lte * bnu(j)
 
 !         source function
-          ssi1(j) = si1em / si1op(j)
+          sSiI(j) = emSiI / opSiI(j)
 
       enddo
 
-      call print_pop('SiI1', ltepop / xnatom(1 : nrhox))
-
-      end subroutine si1
+      end subroutine SiI
 
 *
 *************** E N D   O F   F U N C T I O N   S I 1 O P **************

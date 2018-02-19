@@ -1,6 +1,7 @@
 src=atlas9.strg.F\
     atlas9.util.F\
     atlas9.file.F\
+    atlas9.phys.F\
     atlas9.nlte.F\
     atlas9.main.F\
     atlas9.read.F\
