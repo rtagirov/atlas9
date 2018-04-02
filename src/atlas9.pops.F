@@ -31,12 +31,14 @@
 *------------------------------- EXECUTION -----------------------------
 *
       if (ifmol) then
-         if (ifpres .and. (itemp .ne. itemp1)) call nmolec ((mode))
+!         if (ifpres .and. (itemp .ne. itemp1)) call nmolec ((mode))
+         if (itemp .ne. itemp1) call nmolec ((mode))
          itemp1 = itemp
          if (code .gt. 0.0d0) call molec((code), (mode), number)
 *
       else
-         if (ifpres .and. (itemp .ne. itemp1)) call nelect
+!         if (ifpres .and. (itemp .ne. itemp1)) call nelect
+         if (itemp .ne. itemp1) call nelect
          itemp1 = itemp
 *
          if (code .gt. 0.0d0) then
@@ -113,34 +115,34 @@
 *
 *------------------------------- EXECUTION -----------------------------
 *
-      if ((.not. iread) .and. (.not. ifpres)) then
+!      if ((.not. iread) .and. (.not. ifpres)) then
 *
-         read (15, 151) nummol
-151      format (i5)
+!         read (15, 151) nummol
+!151      format (i5)
 *
-         do jmol = 1, nummol
-            read (15, 152) code(jmol)
-152         format (f20.2)
-            read (15, 153) (xnmol(j, jmol), j = 1, nrhox)
-153         format (1p8d10.3)
-            write (16, 154) ' xnmol for code', code(jmol), 
-     &                      (xnmol(j, jmol), j=1,nrhox)
-154         format (a, f20.2 / (1p8d10.3))
-         end do
+!         do jmol = 1, nummol
+!            read (15, 152) code(jmol)
+!152         format (f20.2)
+!            read (15, 153) (xnmol(j, jmol), j = 1, nrhox)
+!153         format (1p8d10.3)
+!            write (16, 154) ' xnmol for code', code(jmol), 
+!     &                      (xnmol(j, jmol), j=1,nrhox)
+!154         format (a, f20.2 / (1p8d10.3))
+!         end do
 *
-         read  (15, 158)
-         read  (15, 158) (xnatom(j), j = 1, nrhox)
-         read  (15, 158)
-         read  (15, 158) (rho(j), j = 1, nrhox)
-         read  (15, 158)
-         read  (15, 158) (xne(j), j = 1, nrhox)
-158      format (1p8d10.3)
-         write (16, 159) ' xnatom', (xnatom(j), j = 1, nrhox)
-         write (16, 159) ' rho', (rho(j), j = 1, nrhox)
-         write (16, 159) ' xne', (xne(j), j = 1, nrhox)
-159      format (a / (1p8d10.3))
-         iread = .true.
-      end if
+!         read  (15, 158)
+!         read  (15, 158) (xnatom(j), j = 1, nrhox)
+!         read  (15, 158)
+!         read  (15, 158) (rho(j), j = 1, nrhox)
+!         read  (15, 158)
+!         read  (15, 158) (xne(j), j = 1, nrhox)
+!158      format (1p8d10.3)
+!         write (16, 159) ' xnatom', (xnatom(j), j = 1, nrhox)
+!         write (16, 159) ' rho', (rho(j), j = 1, nrhox)
+!         write (16, 159) ' xne', (xne(j), j = 1, nrhox)
+!159      format (a / (1p8d10.3))
+!         iread = .true.
+!      end if
 *
       if (codout .ge. 100.0d0) then
          jmol = 1

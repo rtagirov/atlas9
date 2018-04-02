@@ -2089,17 +2089,25 @@ c                        if (stopfl) stop
          nu = 0
 *
          if (ifpnch .ge. 2) then
-            write (17, 111) 'teff', teff, 'gravity', glog, wlte, 
-     &                      'title', title
+
+!=========================================================
+
+!            write (17, 111) 'teff', teff, 'gravity', glog, wlte, 
+!     &                      'title', title
+
 111         format (a, f8.0, a9, f8.5, 1x, a / a6, a )
+
             if(ifsurf .eq. 2) then
 
-               write(17, '(A,/)') 'disk integrated and
-     $ mu-dependent intensity'
+!               write(17, '(A,/)') 'disk integrated and
+!     $ mu-dependent intensity'
 
-               write(17, 112) 'wvl', 'disk', (angle(mu), mu = 1, nmu)
+!               write(17, 112) 'wvl', 'disk', (angle(mu), mu = 1, nmu)
 
-112            format(4x,a3,9x,a4,11(5x,f7.2),/)
+!112            format(4x,a3,9x,a4,11(5x,f7.2),/)
+
+!=========================================================
+
 !               write(17, 112) nmu, 'angles',
 !     &                                       (angle(mu), mu = 1, nmu)
 !112            format(i3, a7, 10f7.4 / 10x, 10f7.4)
@@ -2351,8 +2359,10 @@ c416         format (i5, f10.2, 1pe15.6, / (1p8e10.3))
 
             deallocate(ip)
 
-            write (17, 416) wave, disurfin, (surfin(mu), mu = 1, nmu)
-416         format (es10.3,12(2x,es10.3))
+!            write (17, 416) wave, disurfin, (surfin(mu), mu = 1, nmu)
+            write (17, 416) wave, (surfin(mu), mu = 1, nmu)
+!416         format (es10.3,12(2x,es10.3))
+416         format (f9.2,11(2x,es15.7))
 
 *
          else if (ifsurf .lt. 2) then
