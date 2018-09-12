@@ -2360,10 +2360,12 @@ c416         format (i5, f10.2, 1pe15.6, / (1p8e10.3))
             deallocate(ip)
 
 !            write (17, 416) wave, disurfin, (surfin(mu), mu = 1, nmu)
+!            write (17, 416) '1', wave, 2.99792458E+10 / (wave * 1.0E-7),
+!     &                      (surfin(mu), mu = 1, nmu)
             write (17, 416) '1', wave, 2.99792458E+10 / (wave * 1.0E-7),
-     &                      (surfin(mu), mu = 1, nmu)
+     &                      disurfin, (surfin(mu), mu = 1, nmu)
 !416         format (es10.3,12(2x,es10.3))
-416         format (A,2x,f9.2,2x,es15.7,2x,11(2x,es15.7))
+416         format (A,2x,f9.2,2x,es15.7,2x,12(2x,es15.7))
 
 *
          else if (ifsurf .lt. 2) then
